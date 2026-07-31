@@ -701,6 +701,16 @@ private fun LakeAdjustPanel(
                 value = settings.lakeDarkness,
                 testTag = "popup_lake_darkness",
             ) { onChange(settings.copy(lakeDarkness = it).clamped()) }
+            LakeSliderRow(
+                title = stringResource(R.string.lake_face_clarity),
+                value = settings.lakeFaceClarity,
+                testTag = "popup_lake_clarity",
+            ) { onChange(settings.copy(lakeFaceClarity = it).clamped()) }
+            Text(
+                stringResource(R.string.lake_scene_hint),
+                color = BmTextMuted,
+                fontSize = 10.sp,
+            )
         }
     }
 }

@@ -75,6 +75,17 @@
     <string name="action_even_skin">Peau uniforme</string>
     <string name="action_defined_features">Traits définis</string>
     <string name="action_stage_ready">Prêt pour la scène</string>
+    <string name="action_reflection_plus">Reflet++</string>
+    <string name="scene_moods">Ambiances</string>
+    <string name="scene_mood_still_well">Puits calme</string>
+    <string name="scene_mood_still_well_sub">Sombre, posé et très lisible</string>
+    <string name="scene_mood_marsh">Marais</string>
+    <string name="scene_mood_marsh_sub">Eau organique aux tons profonds</string>
+    <string name="scene_mood_ripple">Onde douce</string>
+    <string name="scene_mood_ripple_sub">Anneaux légers et clarté maximale</string>
+    <string name="scene_mood_reveal">Révélation++</string>
+    <string name="scene_mood_reveal_sub">Transformation visiteur la plus marquée</string>
+    <string name="lake_scene_hint">Astuce : utilise Révélation++ ou Puits calme quand la cliente veut un reflet embelli plus fort tout en restant lisible à travers l’eau.</string>
 
     <string name="skin_smoothing">Lissage de la peau</string>
     <string name="smoothing_radius">Rayon de lissage</string>

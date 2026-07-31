@@ -10,8 +10,8 @@ import kotlin.math.exp
  * detector frame never makes the water pulse.
  */
 class VisitorRevealController(
-    private val attackSeconds: Float = 0.90f,
-    private val releaseSeconds: Float = 1.35f,
+    private val attackSeconds: Float = 0.72f,
+    private val releaseSeconds: Float = 1.10f,
 ) {
     var value: Float = 0f
         private set
