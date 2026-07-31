@@ -5,8 +5,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
+# Uses ambient `gh` auth (or an already-exported GH_TOKEN).
+# Optional override: BM_USE_OTA_TOKEN=1 loads tools/ota/token.local — PAT must have
+# Contents: write (releases). Do not force-load a weak PAT over a working gh session.
 TOKEN_FILE="$ROOT/tools/ota/token.local"
-if [[ -f "$TOKEN_FILE" ]]; then
+if [[ "${BM_USE_OTA_TOKEN:-}" == "1" && -f "$TOKEN_FILE" ]]; then
   export GH_TOKEN="$(tr -d '[:space:]' < "$TOKEN_FILE")"
 fi
 
