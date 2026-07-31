@@ -1,56 +1,47 @@
 # Validation record
 
-Revision 2.0.0 prepared on 2026-07-30.
+Revision 3.1.0 prepared on 2026-07-31.
 
 ## Completed in the repair environment
 
-- Ran `tools/static-checks.sh`, including model checksum, shader inventory, privacy guards,
-  generated-file guards, and the Compose `weight` import regression guard.
-- Parsed every Android XML resource and every repository JSON document.
-- Validated all shell scripts with `bash -n` and dry-ran the main Makefile workflows:
-  `apk`, `phone`, `expo`, `fps`, and `perf`.
-- Scanned 101 Kotlin and GLSL files for malformed delimiters, unterminated strings/comments,
-  and merge markers.
-- Audited every Kotlin render-pass uniform lookup against its matching GLSL declaration.
-- Checked shaders for the reserved GLSL local identifiers that previously broke startup.
-- Compiled the pure-Kotlin settings/preset/quality core.
-- Compiled the adaptive-quality controller against the complete frame-timing snapshot contract.
-- Compiled the frame-timing collector with a minimal Android clock stub.
-- Simulated adaptive demotion `HIGH -> MEDIUM -> LOW -> PERFORMANCE` under overload and
-  controlled recovery after a sustained comfortable window.
-- Performed a Kotlin parser pass over the rewritten Compose UI. Android/Compose symbols are
-  intentionally unresolved without the Android classpath, but no Kotlin syntax errors were found.
-- Added/updated regression tests for PERFORMANCE-stage shedding, p95/slow-frame telemetry,
-  adaptive hysteresis, new feature settings, and settings persistence.
-- Verified the final source archive with `unzip -t` and checked that it excludes SDK directories,
-  Gradle caches, `local.properties`, VCS metadata, build outputs, and secrets.
+- Ran `tools/static-checks.sh`, including model checksum, shader inventory, privacy/signing guards,
+  scoped Compose import regressions, reserved GLSL identifiers and Kotlin-pass/GLSL uniform parity.
+- Parsed every Android XML resource and confirmed exact English/French key parity.
+- Scanned every `R.string` reference and confirmed a matching default resource.
+- Validated all shell scripts with `bash -n` and dry-ran Makefile help, UI-test and device-check flows.
+- Parsed all production, JVM-test and instrumentation Kotlin files with Kotlin PSI; no syntax errors.
+- Compiled and executed pure-Kotlin simulations for adaptive overload, camera-limited cadence and
+  the 0.9-second visitor reveal.
+- Added regression tests for source-limited FPS, nearest-rank p95, reveal attack/release, lake
+  persistence and scene controls.
+- Added Compose interaction tests for every Studio page, lake selection/slider, one-tap actions,
+  presets, reset and exactly-once switches.
+- Verified the final source archive with `unzip -t`; build outputs, local SDK state, VCS metadata,
+  caches and secrets are excluded.
 
 ## Performance design validated in source
 
-- Preview requests a 30–60 FPS range through CameraX.
-- Frame protection evaluates camera FPS, average render time, p95 render time, slow-frame ratio,
-  and analysis starvation every 500 ms.
-- Severe overload lowers one profile after roughly 500 ms; sustained overload after roughly
-  1.25 seconds; recovery waits for eight comfortable seconds.
-- The hidden PERFORMANCE profile uses a 480-pixel render height, 128-pixel masks, 6 Hz analysis,
-  two smoothing samples, cached masks, and disables geometry, detail restoration, and optional
-  feature styling while preserving core skin, under-eye, and lighting correction.
+- CameraX requests a stable 30 FPS preview.
+- The controller evaluates camera FPS, average/p95 render time, slow-frame ratio and analysis
+  starvation every 500 ms.
+- Optional samples/effects and mask cadence interpolate continuously before a resolution tier is
+  changed; degradation is fast and recovery deliberately slow.
+- Low source FPS with inexpensive rendering is classified as camera-limited rather than causing
+  destructive quality shedding.
+- PERFORMANCE uses 480p rendering, 128px masks, 6 Hz analysis and two skin samples while retaining
+  core skin, under-eye and lighting correction.
+- The lake scene is one post-beauty pass and falls back from three texture taps to one under load.
 
 ## Not executable in the repair environment
 
-The environment cannot resolve the Gradle distribution or Android/Maven dependencies and has no
-attached Android device. Therefore the complete Android compilation and physical-camera performance
-pass remain to be run on the target machine:
+This environment has no Android SDK/Maven cache, connected device or outbound dependency access.
+Therefore full Gradle compilation and physical camera validation remain required on the target
+machine:
 
 ```bash
 make doctor
-make phone
-make perf
+make device-check
 ```
 
-The expected debug artifact is `releases/beauty-mirror-debug.apk`.
-
-A camera sensor or vendor camera session that cannot supply 30 FPS cannot be converted into 30
-unique camera frames by post-processing. The adaptive system protects renderer latency and sheds
-optional work, but the exhibition phone still requires a sustained physical-device test under its
-actual lighting and thermal conditions.
+A camera sensor unable to provide 30 unique frames cannot be converted to 30 FPS by post-processing.
+The app now distinguishes that condition from renderer overload and preserves visual quality.

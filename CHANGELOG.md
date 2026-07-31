@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.1.0
+
+- Added a production dark-lake/marsh/well reflection scene after face beautification.
+- Added a 0.9-second visitor reveal, sparse arrival ripples and face-clarity preservation.
+- Redesigned Studio into compact intent-based pages and face-safe top/bottom docking.
+- Added live face-region outlines, larger deterministic touch targets and Compose interaction tests.
+- Replaced abrupt capping with continuous sample/effect/mask interpolation before rare tier changes.
+- Added camera-limited cadence detection and corrected p95 to nearest-rank calculation.
+- Cached lake face bounds per tracking result and reduced the lake shader to one tap under pressure.
+
 ## 2.0.0
 
 - Camera-first exhibition UI with compact status chrome and labeled capture dock.

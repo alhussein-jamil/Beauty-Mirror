@@ -3,28 +3,20 @@
     <string name="app_name">Beauty Mirror</string>
     <string name="privacy_statement">All camera processing is performed locally on this device.</string>
     <string name="camera_permission_rationale">Camera access is required to show your mirror preview.</string>
-    <string name="camera_permission_denied">Camera permission denied. Enable it in Settings to use Beauty Mirror.</string>
-    <string name="camera_unavailable">Camera unavailable on this device.</string>
-    <string name="opengl_unsupported">OpenGL ES 3.0 is required.</string>
-    <string name="landmarker_missing">Face tracking model is missing from app assets.</string>
     <string name="capture_failed">Could not save photo.</string>
     <string name="capture_saved">Photo saved.</string>
     <string name="storage_permission_needed">Storage permission needed to save photos.</string>
     <string name="switch_camera">Switch camera</string>
     <string name="capture_photo">Capture photo</string>
-    <string name="before">Before</string>
     <string name="hold_for_before_after">Hold to show the untreated preview</string>
     <string name="starting_camera">Starting camera…</string>
     <string name="opening_camera">Opening camera…</string>
     <string name="retry">Retry</string>
-    <string name="hide_controls">Hide panel</string>
     <string name="toggle_controls">Show or hide beauty controls</string>
     <string name="hide_overlay">Hide all controls</string>
     <string name="show_overlay">Show controls</string>
-    <string name="local_processing">Private · processed on device</string>
     <string name="allow_camera">Allow Camera</string>
     <string name="open_settings">Open Settings</string>
-    <string name="flip">Flip</string>
     <string name="studio">Studio</string>
     <string name="compare">Compare</string>
     <string name="face_locked">FACE LOCKED · PRIVATE</string>
@@ -34,11 +26,9 @@
     <string name="tracking_unavailable">Face tracking unavailable; camera preview remains usable</string>
 
     <string name="beauty_studio">Beauty Studio</string>
-    <string name="studio_subtitle">%1$s · live face-aware editing</string>
     <string name="done">Done</string>
+    <string name="off">Off</string>
     <string name="reset_look">Reset look</string>
-    <string name="private_on_device">PRIVATE · ON DEVICE</string>
-    <string name="apply">Apply</string>
     <string name="quick_fix_on">On · tap to undo</string>
     <string name="quick_fix_off">Off · tap to apply</string>
 
@@ -49,29 +39,6 @@
     <string name="page_lips">Lips</string>
     <string name="page_shape">Shape</string>
     <string name="page_system">System</string>
-
-    <string name="guide_quick_title">Choose the result, not the technology</string>
-    <string name="guide_quick_desc">Start with a one-tap correction, then refine only what matters.</string>
-    <string name="guide_skin_title">Even skin without erasing identity</string>
-    <string name="guide_skin_desc">Smoothing is masked away from eyes, brows, nostrils and lips.</string>
-    <string name="guide_under_eyes_title">Treat shadow, color and puffiness separately</string>
-    <string name="guide_under_eyes_desc">The correction follows each eye independently as the head turns.</string>
-    <string name="guide_eyes_title">Clarity, sparkle and brow definition</string>
-    <string name="guide_eyes_desc">Enhancements stay inside eye and brow masks to protect surrounding skin.</string>
-    <string name="guide_lips_title">Natural chroma and border, not lipstick paint</string>
-    <string name="guide_lips_desc">Enhancement boosts your lip color; tint only warms it. Gloss stays on the mouth.</string>
-    <string name="guide_shape_title">Subtle pose-aware geometry</string>
-    <string name="guide_shape_desc">Shape effects weaken automatically at steep angles and under load.</string>
-    <string name="guide_system_title">30 FPS protection is always active</string>
-    <string name="guide_system_desc">Optional detail is reduced before the preview is allowed to become choppy.</string>
-
-    <string name="focus_overview">Whole-face preview</string>
-    <string name="focus_eyes">Eyes + brows</string>
-    <string name="focus_under_eyes">Dark circles + puffiness</string>
-    <string name="focus_skin">Skin-only mask</string>
-    <string name="focus_lips">Lip contour + center gloss</string>
-    <string name="focus_shape">Pose-aware geometry</string>
-    <string name="focus_system">30 FPS protection</string>
 
     <string name="preset_off">Off</string>
     <string name="preset_natural">Natural</string>
@@ -89,104 +56,72 @@
     <string name="quality_ceiling">Quality ceiling</string>
 
     <string name="language">Language</string>
-    <string name="language_subtitle">App interface language</string>
     <string name="language_english">English</string>
     <string name="language_french">Français</string>
 
     <string name="overall_intensity">Overall intensity</string>
-    <string name="overall_intensity_sub">Moves the whole look along one balanced curve</string>
     <string name="one_tap_corrections">One-tap corrections</string>
     <string name="action_fresh_eyes">Fresh eyes</string>
-    <string name="action_fresh_eyes_sub">Dark circles, color and puffiness</string>
     <string name="action_clear_blemishes">Clear blemishes</string>
-    <string name="action_clear_blemishes_sub">Acne, spots, redness</string>
     <string name="action_even_skin">Even skin</string>
-    <string name="action_even_skin_sub">Texture, spots, redness and shine</string>
     <string name="action_defined_features">Defined features</string>
-    <string name="action_defined_features_sub">Eyes, brows, lips and contour</string>
     <string name="action_stage_ready">Stage ready</string>
-    <string name="action_stage_ready_sub">Balanced exhibition preset</string>
-    <string name="info_compare">Hold the compare button at the bottom to see the untreated frame. The saved photo uses the same mirrored, processed result as the preview.</string>
 
     <string name="skin_smoothing">Skin smoothing</string>
-    <string name="skin_smoothing_sub">Softens fine texture</string>
     <string name="smoothing_radius">Smoothing radius</string>
-    <string name="smoothing_radius_sub">Larger values target broader texture</string>
     <string name="texture_retention">Texture retention</string>
-    <string name="texture_retention_sub">Keeps pores and natural detail</string>
     <string name="complexion_evenness">Complexion evenness</string>
-    <string name="complexion_evenness_sub">Reduces broad patchiness</string>
     <string name="acne_blemishes">Acne &amp; blemishes</string>
-    <string name="acne_blemishes_sub">Softens isolated spots without blurring whole face</string>
     <string name="redness_correction">Redness correction</string>
-    <string name="redness_correction_sub">Calms red marks and inflamed spots</string>
     <string name="shine_control">Shine control</string>
-    <string name="shine_control_sub">Compresses forehead and cheek highlights</string>
     <string name="skin_glow">Skin glow</string>
-    <string name="skin_glow_sub">Gentle mid-tone radiance</string>
     <string name="face_light">Face light</string>
-    <string name="face_light_sub">Local exposure without changing the background</string>
     <string name="shadow_lift">Shadow lift</string>
-    <string name="shadow_lift_sub">Opens facial shadows</string>
-    <string name="highlight_protection">Highlight protection</string>
-    <string name="highlight_protection_sub">Protects already bright skin</string>
-    <string name="warmth">Warmth</string>
-    <string name="warmth_sub">Cool to warm skin balance</string>
-    <string name="local_contrast">Local contrast</string>
-    <string name="local_contrast_sub">Adds facial depth after correction</string>
 
     <string name="dark_circle_correction">Dark-circle correction</string>
-    <string name="dark_circle_correction_sub">Matches each side toward nearby cheek tone</string>
     <string name="puffiness_soften">Puffiness soften</string>
-    <string name="puffiness_soften_sub">Smooths local texture without touching the eyelid</string>
     <string name="maximum_lift">Maximum lift</string>
-    <string name="maximum_lift_sub">Caps how much shadow may be brightened</string>
     <string name="blue_purple_neutralization">Blue / purple neutralization</string>
-    <string name="blue_purple_neutralization_sub">Blends toward nearby cheek chroma</string>
-    <string name="info_under_eyes">At steep yaw angles the hidden eye automatically fades so the correction never paints across the nose or temple.</string>
 
     <string name="eye_clarity">Eye clarity</string>
-    <string name="eye_clarity_sub">Restores iris and lash edge detail</string>
     <string name="eye_brightening">Eye brightening</string>
-    <string name="eye_brightening_sub">Targets neutral light pixels in the sclera</string>
     <string name="eye_sparkle">Eye sparkle</string>
-    <string name="eye_sparkle_sub">Adds a restrained highlight response</string>
     <string name="brow_definition">Brow definition</string>
-    <string name="brow_definition_sub">Reinforces existing brow hair, not surrounding skin</string>
     <string name="teeth_whitening">Teeth whitening</string>
-    <string name="teeth_whitening_sub">Only bright low-saturation mouth pixels</string>
 
     <string name="lip_enhancement">Lip enhancement</string>
-    <string name="lip_enhancement_sub">Natural chroma lift</string>
     <string name="lip_tint">Lip tint</string>
-    <string name="lip_tint_sub">Warm your natural lip hue</string>
     <string name="lip_definition">Lip definition</string>
-    <string name="lip_definition_sub">Strengthens the vermilion border</string>
     <string name="lip_gloss">Lip gloss</string>
-    <string name="lip_gloss_sub">Central tracked highlight</string>
 
     <string name="face_slimming">Face slimming</string>
-    <string name="face_slimming_sub">Moves jaw contours inward subtly</string>
     <string name="eye_enlargement">Eye enlargement</string>
-    <string name="eye_enlargement_sub">Small local warp around each eye</string>
     <string name="nose_refinement">Nose refinement</string>
-    <string name="nose_refinement_sub">Subtle narrowing around nose anchors</string>
     <string name="contour">Contour</string>
-    <string name="contour_sub">Soft jaw shade and central nose light</string>
     <string name="blush">Blush</string>
-    <string name="blush_sub">Pose-aware cheek tint</string>
-    <string name="info_shape">Geometry and detail restoration are the first optional stages disabled when 30 FPS protection activates.</string>
 
     <string name="mirror_preview">Mirror preview</string>
     <string name="mirror_preview_sub">Your movement follows a physical mirror</string>
-    <string name="info_quality">High is a ceiling, not a promise. The runtime can temporarily use Medium, Low or Performance to preserve motion, then restores quality after a stable window.</string>
     <string name="diagnostics">Diagnostics</string>
     <string name="diagnostics_sub">Face mesh, pose, FPS and pass timings</string>
 
     <string name="motion_optimizing">Optimizing motion</string>
     <string name="motion_protecting">30 FPS protection active</string>
     <string name="motion_stable">Motion is stable</string>
+    <string name="motion_camera_limited">Camera cadence limited</string>
     <string name="measuring_fps">Measuring FPS</string>
     <string name="perf_runtime_line">%1$s · runtime %2$s · ceiling %3$s</string>
     <string name="perf_render_line">render %1$.1f ms · p95 %2$.1f ms · slow %3$.0f%%</string>
+
+    <string name="page_scene">Scene</string>
+    <string name="lake">Lake</string>
+    <string name="toggle_lake">Toggle dark lake reflection</string>
+    <string name="mirror_scene">Mirror</string>
+    <string name="dark_lake">Dark lake</string>
+    <string name="lake_intensity">Water presence</string>
+    <string name="lake_motion">Ripple motion</string>
+    <string name="lake_darkness">Water darkness</string>
+    <string name="lake_face_clarity">Face clarity through water</string>
+    <string name="performance_interpolation">Adaptive processing pressure: %1$d%%</string>
+
 </resources>

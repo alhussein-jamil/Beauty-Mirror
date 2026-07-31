@@ -35,6 +35,11 @@ class SettingsRepositoryTest {
             detailPreservation = 0.6f,
             qualityLevel = QualityLevel.HIGH,
             debugOverlay = true,
+            reflectionScene = ReflectionScene.DARK_LAKE,
+            lakeIntensity = 0.71f,
+            lakeMotion = 0.27f,
+            lakeDarkness = 0.59f,
+            lakeFaceClarity = 0.83f,
         ).clamped()
         repo.save(custom)
         val loaded = repo.settingsFlow.first()
@@ -52,5 +57,10 @@ class SettingsRepositoryTest {
         assertThat(loaded.underEyeMaximumLift).isWithin(1e-3f).of(0.2f)
         assertThat(loaded.qualityLevel).isEqualTo(QualityLevel.HIGH)
         assertThat(loaded.debugOverlay).isTrue()
+        assertThat(loaded.reflectionScene).isEqualTo(ReflectionScene.DARK_LAKE)
+        assertThat(loaded.lakeIntensity).isWithin(1e-3f).of(0.71f)
+        assertThat(loaded.lakeMotion).isWithin(1e-3f).of(0.27f)
+        assertThat(loaded.lakeDarkness).isWithin(1e-3f).of(0.59f)
+        assertThat(loaded.lakeFaceClarity).isWithin(1e-3f).of(0.83f)
     }
 }

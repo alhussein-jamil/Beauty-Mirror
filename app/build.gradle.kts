@@ -12,8 +12,8 @@ android {
         applicationId = "com.beautymirror.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "2.0.0"
+        versionCode = 10
+        versionName = "3.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -141,4 +141,5 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("com.google.truth:truth:1.4.4")
 }

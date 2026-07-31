@@ -19,6 +19,11 @@ class SettingsRepository(private val context: Context) {
     private val qualityKey = stringPreferencesKey("quality")
     private val debugKey = booleanPreferencesKey("debug")
     private val mirrorKey = booleanPreferencesKey("mirror_preview")
+    private val reflectionSceneKey = stringPreferencesKey("reflection_scene")
+    private val lakeIntensityKey = floatPreferencesKey("lake_intensity")
+    private val lakeMotionKey = floatPreferencesKey("lake_motion")
+    private val lakeDarknessKey = floatPreferencesKey("lake_darkness")
+    private val lakeFaceClarityKey = floatPreferencesKey("lake_face_clarity")
     private val smoothKey = floatPreferencesKey("smooth")
     private val smoothRadiusKey = floatPreferencesKey("smooth_radius")
     private val detailRetentionKey = floatPreferencesKey("detail_retention")
@@ -58,6 +63,13 @@ class SettingsRepository(private val context: Context) {
         val quality = QualityLevel.fromName(prefs[qualityKey] ?: QualityLevel.MEDIUM.name)
         val debug = prefs[debugKey] ?: false
         val mirror = prefs[mirrorKey] ?: true
+        val reflectionScene = runCatching {
+            ReflectionScene.valueOf(prefs[reflectionSceneKey] ?: ReflectionScene.MIRROR.name)
+        }.getOrDefault(ReflectionScene.MIRROR)
+        val lakeIntensity = prefs[lakeIntensityKey] ?: 0.64f
+        val lakeMotion = prefs[lakeMotionKey] ?: 0.34f
+        val lakeDarkness = prefs[lakeDarknessKey] ?: 0.48f
+        val lakeFaceClarity = prefs[lakeFaceClarityKey] ?: 0.72f
         when (preset) {
             BeautyPreset.CUSTOM -> {
                 val global = prefs[globalKey] ?: 0.45f
@@ -69,6 +81,11 @@ class SettingsRepository(private val context: Context) {
                         qualityLevel = quality,
                         debugOverlay = debug,
                         mirrorPreview = mirror,
+                        reflectionScene = reflectionScene,
+                        lakeIntensity = lakeIntensity,
+                        lakeMotion = lakeMotion,
+                        lakeDarkness = lakeDarkness,
+                        lakeFaceClarity = lakeFaceClarity,
                     ).clamped()
                 } else {
                     BeautySettings(
@@ -109,6 +126,11 @@ class SettingsRepository(private val context: Context) {
                         qualityLevel = quality,
                         debugOverlay = debug,
                         mirrorPreview = mirror,
+                        reflectionScene = reflectionScene,
+                        lakeIntensity = lakeIntensity,
+                        lakeMotion = lakeMotion,
+                        lakeDarkness = lakeDarkness,
+                        lakeFaceClarity = lakeFaceClarity,
                     ).clamped()
                 }
             }
@@ -120,6 +142,11 @@ class SettingsRepository(private val context: Context) {
                 },
                 debugOverlay = debug,
                 mirrorPreview = mirror,
+                reflectionScene = reflectionScene,
+                lakeIntensity = lakeIntensity,
+                lakeMotion = lakeMotion,
+                lakeDarkness = lakeDarkness,
+                lakeFaceClarity = lakeFaceClarity,
             )
         }
     }
@@ -132,6 +159,11 @@ class SettingsRepository(private val context: Context) {
             prefs[qualityKey] = settings.qualityLevel.name
             prefs[debugKey] = settings.debugOverlay
             prefs[mirrorKey] = settings.mirrorPreview
+            prefs[reflectionSceneKey] = settings.reflectionScene.name
+            prefs[lakeIntensityKey] = settings.lakeIntensity
+            prefs[lakeMotionKey] = settings.lakeMotion
+            prefs[lakeDarknessKey] = settings.lakeDarkness
+            prefs[lakeFaceClarityKey] = settings.lakeFaceClarity
             prefs[smoothKey] = settings.smoothingStrength
             prefs[smoothRadiusKey] = settings.smoothingRadius
             prefs[detailRetentionKey] = settings.detailRetention
@@ -168,6 +200,6 @@ class SettingsRepository(private val context: Context) {
     }
 
     companion object {
-        private const val CURRENT_EFFECTS_SCHEMA = 3
+        private const val CURRENT_EFFECTS_SCHEMA = 4
     }
 }
