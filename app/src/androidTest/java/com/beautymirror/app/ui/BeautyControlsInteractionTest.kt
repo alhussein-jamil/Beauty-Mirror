@@ -190,5 +190,7 @@ class BeautyControlsInteractionTest {
         compose.runOnIdle {
             assertThat(current.mirrorPreview).isEqualTo(initial)
         }
+
+        compose.onNodeWithTag("about_developed_by").performScrollTo().assertExists()
     }
 }
