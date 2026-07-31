@@ -1,9 +1,9 @@
 {
-  "version": "3.2.0-debug",
-  "buildNumber": 15,
-  "sha256": "36c5d0fc352805b2b401c2a327420cb459f75c3786b419a5ff0b36de2b137745",
+  "version": "3.2.1-debug",
+  "buildNumber": 16,
+  "sha256": "63f3b01724eda555b9dbc8e3ab973bfd1af96bc0ee44e4e76a196b697d144855",
   "size": 68070764,
   "apkAssetName": "beauty-mirror-debug.apk",
-  "publishedAt": "2026-07-31T17:25:15+00:00",
+  "publishedAt": "2026-07-31T19:11:23+00:00",
   "channel": "github-release"
 }
