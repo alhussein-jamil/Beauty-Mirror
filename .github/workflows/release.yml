@@ -77,18 +77,10 @@ jobs:
             :app:assembleRelease
           ./tools/copy-apks.sh all
 
-      - name: Refresh version.json channel
+      - name: Write OTA version.json
         run: |
-          python3 - <<PY
-          import json
-          from pathlib import Path
-          path = Path("releases/version.json")
-          data = json.loads(path.read_text())
-          data["version"] = "${{ steps.ver.outputs.name }}"
-          data["versionCode"] = int("${{ steps.ver.outputs.code }}")
-          data["channel"] = "github-release"
-          path.write_text(json.dumps(data, indent=2) + "\n")
-          PY
+          chmod +x ./tools/release/write-release-meta.sh
+          ./tools/release/write-release-meta.sh releases/beauty-mirror-debug.apk releases
 
       - name: Publish GitHub Release
         env:

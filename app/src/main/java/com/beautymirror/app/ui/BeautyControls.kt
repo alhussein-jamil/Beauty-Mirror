@@ -55,6 +55,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.testTag
 import com.beautymirror.app.BuildConfig
 import com.beautymirror.app.R
+import com.beautymirror.app.ota.OtaController
+import com.beautymirror.app.ota.OtaPreferences
+import com.beautymirror.app.ota.UpdateStatus
 import com.beautymirror.app.rendering.FrameTimingCollector
 import com.beautymirror.app.settings.AdaptivePerformanceState
 import com.beautymirror.app.settings.AppLanguage
@@ -64,6 +67,7 @@ import com.beautymirror.app.settings.LanguagePreferences
 import com.beautymirror.app.settings.QualityLevel
 import com.beautymirror.app.settings.QuickFixSession
 import com.beautymirror.app.settings.ReflectionScene
+import androidx.compose.runtime.DisposableEffect
 import com.beautymirror.app.ui.theme.BmAccent
 import com.beautymirror.app.ui.theme.BmBg
 import com.beautymirror.app.ui.theme.BmDanger
@@ -94,6 +98,7 @@ fun BeautyControls(
     onChange: (BeautySettings) -> Unit,
     onDismiss: () -> Unit,
     onFocusChange: (BeautyFocus) -> Unit = {},
+    otaController: OtaController? = null,
     modifier: Modifier = Modifier,
 ) {
     var page by rememberSaveable { mutableStateOf(StudioPage.LOOKS) }
@@ -101,6 +106,23 @@ fun BeautyControls(
     val language = LanguagePreferences.get(context)
     val quickFixes = remember { QuickFixSession() }
     var activeFixes by remember { mutableStateOf(quickFixes.activeIds) }
+    var autoUpdate by remember {
+        mutableStateOf(OtaPreferences.isAutoUpdateEnabled(context))
+    }
+    var otaStatus by remember { mutableStateOf(otaController?.updateService?.status ?: UpdateStatus.Idle) }
+    DisposableEffect(otaController) {
+        val service = otaController?.updateService
+        if (service == null) {
+            onDispose { }
+        } else {
+            val listener: (UpdateStatus) -> Unit = { otaStatus = it }
+            service.onStatus = listener
+            otaStatus = service.status
+            onDispose {
+                if (service.onStatus === listener) service.onStatus = null
+            }
+        }
+    }
 
     fun preserveExperience(target: BeautySettings): BeautySettings = target.copy(
         qualityLevel = settings.qualityLevel,
@@ -366,6 +388,32 @@ fun BeautyControls(
                             LanguagePreferences.set(context, selected)
                             (context as? Activity)?.recreate()
                         }
+                    }
+                    if (BuildConfig.OTA_ENABLED && otaController != null) {
+                        ToggleRow(
+                            title = stringResource(R.string.auto_updates),
+                            subtitle = stringResource(R.string.auto_updates_sub),
+                            checked = autoUpdate,
+                            testTag = "toggle_auto_updates",
+                        ) {
+                            autoUpdate = it
+                            OtaPreferences.setAutoUpdateEnabled(context, it)
+                        }
+                        TextButton(
+                            onClick = { otaController.checkNow() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 44.dp)
+                                .testTag("check_updates"),
+                        ) {
+                            Text(stringResource(R.string.check_updates), color = BmAccent)
+                        }
+                        Text(
+                            text = otaStatusLabel(otaStatus),
+                            color = BmTextMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.testTag("ota_status"),
+                        )
                     }
                     if (BuildConfig.DEBUG_OVERLAY_AVAILABLE) {
                         ToggleRow(
@@ -689,6 +737,17 @@ private fun QualitySelector(selected: QualityLevel, onSelect: (QualityLevel) -> 
             )
         }
     }
+}
+
+@Composable
+private fun otaStatusLabel(status: UpdateStatus): String = when (status) {
+    UpdateStatus.Idle -> stringResource(R.string.ota_status_idle)
+    UpdateStatus.Checking -> stringResource(R.string.ota_status_checking)
+    UpdateStatus.UpToDate -> stringResource(R.string.ota_status_up_to_date)
+    is UpdateStatus.Downloading -> stringResource(R.string.ota_status_downloading, status.percent)
+    UpdateStatus.Installing -> stringResource(R.string.ota_status_installing)
+    is UpdateStatus.Available -> stringResource(R.string.ota_status_available, status.version, status.build)
+    is UpdateStatus.Error -> status.message
 }
 
 @Composable

@@ -31,6 +31,7 @@ import com.beautymirror.app.camera.CameraController
 import com.beautymirror.app.camera.ProcessedCaptureController
 import com.beautymirror.app.rendering.BeautyRenderer
 import com.beautymirror.app.rendering.FrameTimingCollector
+import com.beautymirror.app.ota.OtaController
 import com.beautymirror.app.settings.AdaptivePerformanceState
 import com.beautymirror.app.settings.AdaptiveQualityController
 import com.beautymirror.app.settings.BeautySettings
@@ -111,6 +112,7 @@ fun BeautyMirrorApp(
         val captureController = remember {
             ProcessedCaptureController(context, renderer, dispatchers.glHandler)
         }
+        val otaController = remember { OtaController(context) }
 
         var settings by remember { mutableStateOf(BeautySettings.natural()) }
         var settingsHydrated by remember { mutableStateOf(false) }
@@ -247,6 +249,11 @@ fun BeautyMirrorApp(
             }
         }
 
+        DisposableEffect(otaController) {
+            otaController.start()
+            onDispose { otaController.stop() }
+        }
+
         DisposableEffect(Unit) {
             onDispose {
                 cameraController.release()
@@ -268,6 +275,7 @@ fun BeautyMirrorApp(
             pipelineReady = pipelineReady,
             statusMessage = landmarkerError,
             startWithChromeHidden = launchExhibitionMode,
+            otaController = otaController,
         )
     }
 }

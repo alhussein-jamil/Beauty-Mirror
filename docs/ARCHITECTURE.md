@@ -100,7 +100,7 @@ Pressure rises quickly and recovers slowly to avoid visible oscillation. A discr
 
 ## Privacy and release
 
-- Source and merged release manifests must contain no effective network permission.
+- Source and merged release manifests allow `INTERNET` for GitHub OTA only; `ACCESS_NETWORK_STATE` must stay removed.
 - The model and shader assets are bundled and verified.
 - Release signing is supplied externally; debug signing is never used for release.
 - The unused FileProvider was removed.
