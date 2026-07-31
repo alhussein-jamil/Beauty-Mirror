@@ -7,8 +7,10 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
-    <!-- Privacy: strip network permissions pulled in by MediaPipe / Play services AARs. -->
-    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <!-- GitHub Releases OTA only. Face processing stays on-device. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Strip unused network state permission pulled in by AARs. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
     <uses-feature android:name="android.hardware.camera" android:required="true" />
@@ -25,10 +27,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BeautyMirror"
         android:hardwareAccelerated="true">
-        <!-- Lets Game Dashboard / OEM schedulers offer Performance / Battery game modes. -->
         <meta-data
             android:name="android.game_mode_config"
             android:resource="@xml/game_mode_config" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
         <activity
             android:name=".MainActivity"
             android:exported="true"

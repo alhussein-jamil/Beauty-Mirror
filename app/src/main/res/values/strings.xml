@@ -58,6 +58,15 @@
     <string name="language">Language</string>
     <string name="language_english">English</string>
     <string name="language_french">Français</string>
+    <string name="auto_updates">Automatic updates</string>
+    <string name="auto_updates_sub">Check GitHub Releases while the app is open</string>
+    <string name="check_updates">Check for updates</string>
+    <string name="ota_status_idle">Updates ready</string>
+    <string name="ota_status_checking">Checking for updates…</string>
+    <string name="ota_status_up_to_date">You are up to date</string>
+    <string name="ota_status_downloading">Downloading update… %1$d%%</string>
+    <string name="ota_status_installing">Opening installer…</string>
+    <string name="ota_status_available">Update %1$s (build %2$d) available</string>
 
     <string name="overall_intensity">Overall intensity</string>
     <string name="one_tap_corrections">One-tap corrections</string>

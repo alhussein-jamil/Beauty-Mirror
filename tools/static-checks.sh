@@ -96,9 +96,15 @@ if find app docs -type f \( -name '*.frag' -o -name '*.vert' \) \
   exit 1
 fi
 
+# INTERNET is allowed for GitHub OTA only. ACCESS_NETWORK_STATE must stay removed.
 if grep -R --line-number --include='AndroidManifest.xml' \
-  -E 'android.permission.(INTERNET|ACCESS_NETWORK_STATE)' app/src/main | grep -v 'tools:node="remove"'; then
-  echo "Network permission declared in source manifest" >&2
+  -E 'android.permission.ACCESS_NETWORK_STATE' app/src/main | grep -v 'tools:node="remove"'; then
+  echo "ACCESS_NETWORK_STATE must be stripped in source manifest" >&2
+  exit 1
+fi
+if ! grep -R --include='AndroidManifest.xml' -E 'android.permission.INTERNET' app/src/main \
+  | grep -v 'tools:node="remove"' | grep -q .; then
+  echo "INTERNET permission required for GitHub OTA" >&2
   exit 1
 fi
 

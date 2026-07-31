@@ -12,10 +12,12 @@ android {
         applicationId = "com.beautymirror.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "3.1.0"
+        versionCode = 11
+        versionName = "3.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+        buildConfigField("boolean", "OTA_ENABLED", "true")
+        buildConfigField("String", "OTA_GITHUB_REPO", "\"alhussein-jamil/Beauty-Mirror\"")
     }
 
     val releaseStorePath = providers.gradleProperty("BEAUTY_MIRROR_RELEASE_STORE_FILE").orNull
@@ -114,6 +116,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")

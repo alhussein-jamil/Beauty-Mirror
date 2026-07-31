@@ -34,8 +34,12 @@ if [[ -z "$manifest" ]]; then
   echo "Merged release manifest not found" >&2
   exit 1
 fi
-if grep -qE 'android.permission.(INTERNET|ACCESS_NETWORK_STATE)' "$manifest"; then
-  echo "Network permission present in merged release manifest: $manifest" >&2
+if grep -qE 'android.permission.ACCESS_NETWORK_STATE' "$manifest"; then
+  echo "ACCESS_NETWORK_STATE present in merged release manifest: $manifest" >&2
+  exit 1
+fi
+if ! grep -qE 'android.permission.INTERNET' "$manifest"; then
+  echo "INTERNET missing from merged release manifest (required for OTA): $manifest" >&2
   exit 1
 fi
 

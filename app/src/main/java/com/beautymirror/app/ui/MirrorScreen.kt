@@ -89,6 +89,7 @@ import com.beautymirror.app.camera.CaptureSizeCalculator
 import com.beautymirror.app.camera.ProcessedCaptureController
 import com.beautymirror.app.rendering.BeautyRenderer
 import com.beautymirror.app.rendering.FrameTimingCollector
+import com.beautymirror.app.ota.OtaController
 import com.beautymirror.app.settings.AdaptivePerformanceState
 import com.beautymirror.app.settings.BeautySettings
 import com.beautymirror.app.settings.QualityLevel
@@ -117,6 +118,7 @@ fun MirrorScreen(
     pipelineReady: Boolean = true,
     statusMessage: String? = null,
     startWithChromeHidden: Boolean = false,
+    otaController: OtaController? = null,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
@@ -346,6 +348,7 @@ fun MirrorScreen(
                     controlsVisible = false
                 },
                 onFocusChange = { activeFocus = it },
+                otaController = otaController,
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(

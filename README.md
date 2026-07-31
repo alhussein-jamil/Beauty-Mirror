@@ -24,15 +24,17 @@ A fully local Android beauty mirror designed for a live exhibition. CameraX feed
 - Camera-first Compose UX with a compact top status bar, studio sheet and labeled capture dock
 - HIGH/MEDIUM/LOW plus automatic PERFORMANCE quality with continuous interpolation, fast demotion and slow recovery
 - Camera-limited cadence detection avoids destroying image quality when the sensor—not the renderer—is the bottleneck
-- No accounts, analytics, uploads, runtime model download or network permission
+- No accounts, analytics, uploads, or runtime model download; network only for GitHub OTA
 
 ## Privacy
 
-The source manifest explicitly removes network permissions that transitive libraries may declare. Camera analysis frames and landmarks are not persisted. Only photos explicitly captured by the user are saved.
+Face processing stays on-device. The app may use `INTERNET` only to check/download updates from GitHub Releases (Bokko-style OTA). `ACCESS_NETWORK_STATE` stays stripped. Camera analysis frames and landmarks are not persisted. Only photos explicitly captured by the user are saved.
 
 Required permissions:
 
 - `CAMERA`
+- `INTERNET` (GitHub OTA only)
+- `REQUEST_INSTALL_PACKAGES` (sideload updates)
 - `WRITE_EXTERNAL_STORAGE` only on Android 8–9 (`maxSdkVersion=28`)
 
 ## Requirements
@@ -173,13 +175,14 @@ adb logcat | grep -E 'BeautyMirror|BeautyRenderer|FaceLandmarker'
 
 Check cold launch, permission grant/denial, front/rear switching, all rotations, tracking alignment at frame edges, glasses/facial hair, low light, before/after, repeated captures, background/resume, and sustained thermal behavior.
 
-## Releases (GitHub, not in-app OTA)
+## Releases + in-app OTA
 
-This app has **no in-app OTA**: privacy requires no network permission in the APK. Distribution is GitHub Releases only.
+Sideload builds check GitHub Releases for a newer `versionCode` (`buildNumber` in `version.json`), download the debug APK, verify SHA-256, then open the system installer. Auto-update is on by default (Studio → System).
 
-- Local publish: copy a PAT into `tools/ota/token.local` (see `token.local.example`), then `make ship-release`
-- Auto publish: push tag `v*` (or run **Release APK** workflow) — CI builds APKs and uploads the GitHub Release
-- `releases/version.json` describes the published channel; APKs are release assets, never baked secrets
+- Local publish: `make ship-release` (writes OTA `version.json` from the debug APK)
+- Auto publish: push tag `v*` — **Release APK** workflow uploads APK + `version.json`
+- Public repo: no OTA token baked into the APK
+- Optional host PAT: `tools/ota/token.local` with `BM_USE_OTA_TOKEN=1` for publish helpers only
 
 ## Known limitations
 
