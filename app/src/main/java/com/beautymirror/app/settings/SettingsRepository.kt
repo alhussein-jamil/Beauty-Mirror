@@ -67,11 +67,11 @@ class SettingsRepository(private val context: Context) {
             ReflectionScene.valueOf(prefs[reflectionSceneKey] ?: ReflectionScene.MIRROR.name)
         }.getOrDefault(ReflectionScene.MIRROR)
         val effectsSchema = prefs[effectsSchemaKey] ?: 1
-        // Schema 7: living Narcissus pool (visible hush; prior 6 froze motion).
-        val lakeIntensity = if (effectsSchema < 7) 0.72f else (prefs[lakeIntensityKey] ?: 0.72f)
-        val lakeMotion = if (effectsSchema < 7) 0.34f else (prefs[lakeMotionKey] ?: 0.34f)
-        val lakeDarkness = if (effectsSchema < 7) 0.76f else (prefs[lakeDarknessKey] ?: 0.76f)
-        val lakeFaceClarity = if (effectsSchema < 7) 0.90f else (prefs[lakeFaceClarityKey] ?: 0.90f)
+        // Schema 8: obvious puddle ripples (prior 7 still too subtle on-device).
+        val lakeIntensity = if (effectsSchema < 8) 0.78f else (prefs[lakeIntensityKey] ?: 0.78f)
+        val lakeMotion = if (effectsSchema < 8) 0.55f else (prefs[lakeMotionKey] ?: 0.55f)
+        val lakeDarkness = if (effectsSchema < 8) 0.70f else (prefs[lakeDarknessKey] ?: 0.70f)
+        val lakeFaceClarity = if (effectsSchema < 8) 0.88f else (prefs[lakeFaceClarityKey] ?: 0.88f)
         when (preset) {
             BeautyPreset.CUSTOM -> {
                 val global = prefs[globalKey] ?: 0.45f
@@ -201,6 +201,6 @@ class SettingsRepository(private val context: Context) {
     }
 
     companion object {
-        private const val CURRENT_EFFECTS_SCHEMA = 7
+        private const val CURRENT_EFFECTS_SCHEMA = 8
     }
 }
