@@ -8,11 +8,11 @@ import com.beautymirror.app.rendering.GlTexture
 import com.beautymirror.app.rendering.RenderPass
 
 /**
- * One-pass dark-water treatment designed for exhibition use.
+ * One-pass Narcissus-pool treatment for exhibition use.
  *
- * It runs after face beautification so correction remains legible, then introduces restrained
- * displacement, dark marsh/lake color and sparse face-centered ripples. [quality] controls only
- * optional taps and never changes the scene identity.
+ * Runs after beautification so the face stays a clear looking-glass in dark still water.
+ * Motion is low-frequency pond breath plus a soft visitor wavefront — never busy radar ripples.
+ * [quality] only gates optional smear taps.
  */
 class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     override val name: String = "lake_reflection"
@@ -43,10 +43,10 @@ class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     var faceHeight: Float = 0.52f
     var facePresence: Float = 0f
     var visitorReveal: Float = 0f
-    var intensity: Float = 0.64f
-    var motion: Float = 0.34f
-    var darkness: Float = 0.48f
-    var faceClarity: Float = 0.72f
+    var intensity: Float = 0.68f
+    var motion: Float = 0.12f
+    var darkness: Float = 0.78f
+    var faceClarity: Float = 0.94f
     var quality: Float = 1f
 
     override fun resize(width: Int, height: Int) {

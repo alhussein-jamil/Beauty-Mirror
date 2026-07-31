@@ -414,16 +414,16 @@ fun BeautyControls(
                                 title = stringResource(R.string.scene_mood_still_well),
                                 subtitle = stringResource(R.string.scene_mood_still_well_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeDarkness >= 0.76f && settings.lakeMotion <= 0.18f,
+                                active = settings.lakeDarkness >= 0.78f && settings.lakeMotion <= 0.12f,
                                 testTag = "mood_still_well",
-                            ) { applyLakeMood(0.74f, 0.14f, 0.82f, 0.96f) }
+                            ) { applyLakeMood(0.62f, 0.08f, 0.84f, 0.98f) }
                             SceneMoodCard(
                                 title = stringResource(R.string.scene_mood_marsh),
                                 subtitle = stringResource(R.string.scene_mood_marsh_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeDarkness >= 0.80f && settings.lakeMotion > 0.18f,
+                                active = settings.lakeDarkness >= 0.80f && settings.lakeMotion > 0.14f,
                                 testTag = "mood_marsh",
-                            ) { applyLakeMood(0.82f, 0.22f, 0.88f, 0.90f) }
+                            ) { applyLakeMood(0.72f, 0.18f, 0.86f, 0.92f) }
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -433,16 +433,16 @@ fun BeautyControls(
                                 title = stringResource(R.string.scene_mood_ripple),
                                 subtitle = stringResource(R.string.scene_mood_ripple_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeIntensity <= 0.64f,
+                                active = settings.lakeMotion >= 0.22f && settings.lakeIntensity <= 0.70f,
                                 testTag = "mood_ripple",
-                            ) { applyLakeMood(0.56f, 0.18f, 0.68f, 0.98f) }
+                            ) { applyLakeMood(0.58f, 0.28f, 0.70f, 0.96f) }
                             SceneMoodCard(
                                 title = stringResource(R.string.scene_mood_reveal),
                                 subtitle = stringResource(R.string.scene_mood_reveal_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeIntensity >= 0.84f && settings.lakeFaceClarity >= 0.94f,
+                                active = settings.lakeIntensity >= 0.78f && settings.lakeFaceClarity >= 0.96f,
                                 testTag = "mood_reveal",
-                            ) { applyLakeMood(0.88f, 0.20f, 0.80f, 1.00f) }
+                            ) { applyLakeMood(0.80f, 0.10f, 0.82f, 1.00f) }
                         }
                         SettingSlider(stringResource(R.string.lake_intensity), settings.lakeIntensity, "slider_lake_intensity") { onChange(settings.copy(lakeIntensity = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_motion), settings.lakeMotion, "slider_lake_motion") { onChange(settings.copy(lakeMotion = it).clamped()) }

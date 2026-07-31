@@ -66,14 +66,15 @@ class SettingsRepository(private val context: Context) {
         val reflectionScene = runCatching {
             ReflectionScene.valueOf(prefs[reflectionSceneKey] ?: ReflectionScene.MIRROR.name)
         }.getOrDefault(ReflectionScene.MIRROR)
-        val lakeIntensity = prefs[lakeIntensityKey] ?: 0.72f
-        val lakeMotion = prefs[lakeMotionKey] ?: 0.22f
-        val lakeDarkness = prefs[lakeDarknessKey] ?: 0.72f
-        val lakeFaceClarity = prefs[lakeFaceClarityKey] ?: 0.88f
+        val effectsSchema = prefs[effectsSchemaKey] ?: 1
+        // Schema 6 retunes the dark-lake scene toward a still Narcissus pool.
+        val lakeIntensity = if (effectsSchema < 6) 0.68f else (prefs[lakeIntensityKey] ?: 0.68f)
+        val lakeMotion = if (effectsSchema < 6) 0.12f else (prefs[lakeMotionKey] ?: 0.12f)
+        val lakeDarkness = if (effectsSchema < 6) 0.78f else (prefs[lakeDarknessKey] ?: 0.78f)
+        val lakeFaceClarity = if (effectsSchema < 6) 0.94f else (prefs[lakeFaceClarityKey] ?: 0.94f)
         when (preset) {
             BeautyPreset.CUSTOM -> {
                 val global = prefs[globalKey] ?: 0.45f
-                val effectsSchema = prefs[effectsSchemaKey] ?: 1
                 if (effectsSchema < 2) {
                     // Older releases were tuned so conservatively that most sliders looked like
                     // face exposure only. Rebase legacy custom looks onto the stronger v2 curve.
@@ -200,6 +201,6 @@ class SettingsRepository(private val context: Context) {
     }
 
     companion object {
-        private const val CURRENT_EFFECTS_SCHEMA = 5
+        private const val CURRENT_EFFECTS_SCHEMA = 6
     }
 }
