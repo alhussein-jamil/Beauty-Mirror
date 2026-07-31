@@ -1,8 +1,12 @@
-# Fine-grained GitHub PAT for release tooling (gh upload / private assets).
+# Optional fine-grained GitHub PAT for host-side release helpers.
 # Copy to token.local (gitignored). Never bake into the APK.
 #
 # Beauty Mirror has NO in-app OTA (privacy: no INTERNET permission).
-# This token is only for host-side GitHub Release publish helpers.
+# Distribution is GitHub Releases only.
 #
-# Suggested scopes: Contents read/write on alhussein-jamil/Beauty-Mirror
+# Default `make ship-release` uses ambient `gh` auth.
+# To force this file: BM_USE_OTA_TOKEN=1 make ship-release
+#
+# Required for that override: Contents → Read and write (includes Releases)
+# on alhussein-jamil/Beauty-Mirror
 GITHUB_TOKEN_HERE
