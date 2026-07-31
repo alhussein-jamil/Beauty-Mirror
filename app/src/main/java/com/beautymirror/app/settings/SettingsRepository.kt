@@ -58,8 +58,8 @@ class SettingsRepository(private val context: Context) {
     private val noseKey = floatPreferencesKey("nose_refine")
 
     val settingsFlow: Flow<BeautySettings> = context.dataStore.data.map { prefs ->
-        val preset = runCatching { BeautyPreset.valueOf(prefs[presetKey] ?: BeautyPreset.NATURAL.name) }
-            .getOrDefault(BeautyPreset.NATURAL)
+        val preset = runCatching { BeautyPreset.valueOf(prefs[presetKey] ?: BeautyPreset.OFF.name) }
+            .getOrDefault(BeautyPreset.OFF)
         val quality = QualityLevel.fromName(prefs[qualityKey] ?: QualityLevel.MEDIUM.name)
         val debug = prefs[debugKey] ?: false
         val mirror = prefs[mirrorKey] ?: true

@@ -114,7 +114,7 @@ fun BeautyMirrorApp(
         }
         val otaController = remember { OtaController(context) }
 
-        var settings by remember { mutableStateOf(BeautySettings.natural()) }
+        var settings by remember { mutableStateOf(BeautySettings.off()) }
         var settingsHydrated by remember { mutableStateOf(false) }
         val stored by produceState<BeautySettings?>(initialValue = null, key1 = settingsRepository) {
             settingsRepository.settingsFlow.collect { value = it }
