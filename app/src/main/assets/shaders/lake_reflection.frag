@@ -38,6 +38,7 @@ void main() {
 
     vec2 uv = vTexCoord;
     float aspect = uViewport.x / max(uViewport.y, 1.0);
+    float clarity = clamp(uFaceClarity, 0.0, 1.0);
 
     // Aspect-correct vector from face — puddle rings expand in real screen space.
     vec2 fromFace = uv - uFaceCenter;
@@ -46,8 +47,11 @@ void main() {
     vec2 radial = fromFace / max(r, 1e-4);
 
     vec2 faceRadius = max(uFaceSize * vec2(0.70, 0.68), vec2(0.12, 0.16));
-    float faceCore = softEllipse(uv, uFaceCenter, faceRadius * vec2(0.70, 0.68)) * uFacePresence;
-    float faceRim = softEllipse(uv, uFaceCenter, faceRadius * vec2(1.05, 1.02)) * uFacePresence;
+    // High clarity grows the still zone so chin/forehead stay out of the puddle warp.
+    float coreScale = mix(0.70, 0.92, clarity);
+    float rimScale = mix(1.05, 1.18, clarity);
+    float faceCore = softEllipse(uv, uFaceCenter, faceRadius * vec2(coreScale, coreScale * 0.97)) * uFacePresence;
+    float faceRim = softEllipse(uv, uFaceCenter, faceRadius * vec2(rimScale, rimScale * 0.97)) * uFacePresence;
     faceRim = clamp(faceRim - faceCore * 0.75, 0.0, 1.0);
 
     float reveal = smoothstep(0.02, 0.75, uVisitorReveal);
@@ -83,8 +87,9 @@ void main() {
          freq * 0.45 * cos(phase3) * 0.25) * damp * presenceBoost * life;
     slope += -28.0 * (r - dropR) * drop;
 
-    // Face stays calmer; puddle outside / rim gets full kick.
-    float faceCalm = mix(1.0, 0.22, faceCore * mix(0.55, 0.90, uFaceClarity));
+    // clarity=1 → zero UV bend on the face core; rim keeps a soft meniscus.
+    float faceCalm = 1.0 - clamp(faceCore * mix(0.55, 1.05, clarity), 0.0, 1.0);
+    faceCalm *= 1.0 - faceRim * clarity * 0.55;
     // Big enough UV bend to see on a phone at mid/max motion (~2–5% UV).
     float bend = mix(0.012, 0.055, motion) * mix(0.65, 1.0, intensity) * faceCalm;
     vec2 drift = radial * slope * bend * 0.018;
@@ -100,7 +105,7 @@ void main() {
         smear.x /= aspect;
         vec3 a = texture(uInput, clamp(sampleUv + smear, vec2(0.001), vec2(0.999))).rgb;
         vec3 b = texture(uInput, clamp(sampleUv - smear, vec2(0.001), vec2(0.999))).rgb;
-        reflected = mix(reflected, (reflected * 2.0 + a + b) * 0.25, 0.22 * life);
+        reflected = mix(reflected, (reflected * 2.0 + a + b) * 0.25, 0.22 * life * faceCalm);
     }
 
     // Keep lots of warped image in the water so ripples actually read.
@@ -111,31 +116,32 @@ void main() {
     float openWater = smoothstep(0.18, 0.85, r / max(length(faceRadius), 0.2));
     vec3 waterBody = mix(abyss, peat, depthGrad * 0.5 + openWater * 0.25);
     float absorb = (0.16 + uDarkness * 0.34) * mix(0.35, 1.0, openWater);
-    absorb *= (1.0 - faceCore * mix(0.55, 0.85, uFaceClarity));
+    absorb *= (1.0 - faceCore * mix(0.55, 0.98, clarity));
     vec3 toned = mix(reflected, waterBody + vec3(luma) * vec3(0.22, 0.26, 0.22), absorb);
 
-    // Crest lighting — this is what sells "puddle" even on dark water.
+    // Crest lighting — sells "puddle" on open water; faceCalm kills it on the face.
     float crest = pow(clamp(0.5 + 0.5 * height, 0.0, 1.0), 2.2);
     float trough = pow(clamp(0.5 - 0.5 * height, 0.0, 1.0), 2.0);
-    toned += vec3(0.70, 0.74, 0.68) * crest * (0.10 + 0.22 * intensity) * life;
-    toned *= 1.0 - trough * (0.08 + 0.10 * uDarkness) * life;
+    toned += vec3(0.70, 0.74, 0.68) * crest * (0.10 + 0.22 * intensity) * life * faceCalm;
+    toned *= 1.0 - trough * (0.08 + 0.10 * uDarkness) * life * faceCalm;
     // Specular glints on steep slopes.
     toned += vec3(0.85, 0.88, 0.82) * pow(clamp(abs(slope) * 0.04, 0.0, 1.0), 2.5)
-        * (0.06 + 0.14 * intensity) * life;
+        * (0.06 + 0.14 * intensity) * life * faceCalm;
 
     float grain = hash12(floor(uv * vec2(160.0, 110.0)) + floor(uTime * 8.0)) - 0.5;
     toned += grain * 0.012 * absorb;
 
-    // Clear face core with wet refraction that still carries ripples at the rim.
-    float portal = faceCore * mix(0.42, 0.72, uFaceClarity) * mix(0.45, 1.0, reveal);
-    float wetMix = mix(0.45, 0.18, uFaceClarity) * life + 0.08;
+    // clarity=1 → full still face (undistorted input). Lower values keep a wet refraction look.
+    float portal = faceCore * mix(0.42, 1.0, clarity);
+    float wetMix = mix(0.48, 0.0, clarity) * life;
     vec3 mirrorFace = mix(base.rgb, reflected, wetMix);
-    mirrorFace = mix(mirrorFace, base.rgb * vec3(1.025, 1.02, 1.01) + vec3(0.008), 0.30 + 0.35 * uFaceClarity);
-    mirrorFace = mix(mirrorFace, toned, faceRim * (0.25 + 0.35 * life));
+    mirrorFace = mix(mirrorFace, base.rgb * vec3(1.015, 1.012, 1.008) + vec3(0.004), 0.25 + 0.55 * clarity);
+    // Rim may pick up a little water grade; clarity clamps how much.
+    mirrorFace = mix(mirrorFace, toned, faceRim * (0.25 + 0.35 * life) * mix(1.0, 0.35, clarity));
     vec3 color = mix(toned, mirrorFace, portal);
 
-    // Rim meniscus catches crest light.
-    color += vec3(0.55, 0.58, 0.52) * faceRim * crest * 0.12 * life;
+    // Rim meniscus catches crest light outside the still face.
+    color += vec3(0.55, 0.58, 0.52) * faceRim * crest * 0.12 * life * mix(1.0, 0.25, clarity);
 
     vec2 well = uv - vec2(0.5);
     well.x *= aspect;

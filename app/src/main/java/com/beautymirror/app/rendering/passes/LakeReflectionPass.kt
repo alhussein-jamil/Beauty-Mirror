@@ -11,7 +11,8 @@ import com.beautymirror.app.rendering.RenderPass
  * One-pass dark puddle / Narcissus-pool treatment for exhibition use.
  *
  * Runs after beautification. Concentric expanding ripples bend UVs and light crests so motion
- * reads clearly; the face core stays calmer and readable. [quality] only gates smear taps.
+ * reads clearly; [faceClarity] at 1.0 keeps the face core still (no puddle warp). [quality]
+ * only gates smear taps.
  */
 class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     override val name: String = "lake_reflection"
@@ -45,7 +46,7 @@ class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     var intensity: Float = 0.78f
     var motion: Float = 0.55f
     var darkness: Float = 0.70f
-    var faceClarity: Float = 0.88f
+    var faceClarity: Float = 1f
     var quality: Float = 1f
 
     override fun resize(width: Int, height: Int) {

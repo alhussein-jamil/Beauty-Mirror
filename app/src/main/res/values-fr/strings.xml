@@ -85,7 +85,7 @@
     <string name="scene_mood_ripple_sub">Anneaux de surface plus vivants</string>
     <string name="scene_mood_reveal">Révélation++</string>
     <string name="scene_mood_reveal_sub">Crête d’arrivée, puis reflet clair</string>
-    <string name="lake_scene_hint">Astuce : Puits calme garde un murmure vivant autour d’un visage net. Monte Mouvement pour plus d’ondes ; Clarté garde le miroir lisible.</string>
+    <string name="lake_scene_hint">Astuce : Gardez Visage immobile au max pour que les ondes restent dans l’eau. Montez Mouvement des ondes pour des anneaux plus forts autour de vous.</string>
 
     <string name="skin_smoothing">Lissage de la peau</string>
     <string name="smoothing_radius">Rayon de lissage</string>
@@ -141,7 +141,7 @@
     <string name="lake_intensity">Présence de l’eau</string>
     <string name="lake_motion">Mouvement des ondes</string>
     <string name="lake_darkness">Obscurité de l’eau</string>
-    <string name="lake_face_clarity">Lisibilité du visage dans l’eau</string>
+    <string name="lake_face_clarity">Visage immobile</string>
     <string name="performance_interpolation">Pression de traitement adaptatif : %1$d%%</string>
 
 </resources>

@@ -389,8 +389,9 @@ class RenderGraph(context: Context) {
                 }
                 cachedLakeFaceCenterX = (minX + maxX) * 0.5f
                 cachedLakeFaceCenterY = (minY + maxY) * 0.5f
-                cachedLakeFaceWidth = (maxX - minX).coerceIn(0.12f, 0.82f)
-                cachedLakeFaceHeight = (maxY - minY).coerceIn(0.16f, 0.92f)
+                // Slight pad so the still-face ellipse covers hairline/jaw under motion.
+                cachedLakeFaceWidth = ((maxX - minX) * 1.06f).coerceIn(0.12f, 0.85f)
+                cachedLakeFaceHeight = ((maxY - minY) * 1.08f).coerceIn(0.16f, 0.95f)
             }
             lastLakeTrackingTimestampNs = tr.timestampNs
         }
@@ -409,6 +410,7 @@ class RenderGraph(context: Context) {
         lakePass.intensity = s.lakeIntensity * lakeMix
         lakePass.motion = s.lakeMotion
         lakePass.darkness = s.lakeDarkness
+        // 1.0 = still face (no puddle warp). Product default keeps the subject readable.
         lakePass.faceClarity = s.lakeFaceClarity
         lakePass.quality = perf.sampleScale
         lakePass.enabled = lakeMix > 0.003f
