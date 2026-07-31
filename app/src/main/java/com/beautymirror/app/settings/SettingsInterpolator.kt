@@ -17,8 +17,8 @@ class SettingsInterpolator(
     private val dimPulse: Float = 0.22f,
     private val dimDecay: Float = 0.70f,
 ) {
-    private var target: BeautySettings = BeautySettings.natural()
-    private var current: BeautySettings = BeautySettings.natural()
+    private var target: BeautySettings = BeautySettings.off()
+    private var current: BeautySettings = BeautySettings.off()
     private var effectsAppliedOnce: Boolean = false
     private var dimAmount: Float = 0f
     private var pendingVisualChange: Boolean = false

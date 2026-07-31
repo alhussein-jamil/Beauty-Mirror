@@ -93,6 +93,7 @@ import com.beautymirror.app.ota.OtaController
 import com.beautymirror.app.settings.AdaptivePerformanceState
 import com.beautymirror.app.settings.BeautySettings
 import com.beautymirror.app.settings.QualityLevel
+import com.beautymirror.app.settings.QuickFixSession
 import com.beautymirror.app.settings.ReflectionScene
 import com.beautymirror.app.tracking.FaceTrackingResult
 import com.beautymirror.app.ui.theme.BmAccent
@@ -134,6 +135,8 @@ fun MirrorScreen(
     var lakePanelVisible by rememberSaveable { mutableStateOf(false) }
     var studioDockTop by rememberSaveable { mutableStateOf(false) }
     var activeFocus by remember { mutableStateOf(BeautyFocus.OVERVIEW) }
+    // Lives above BeautyControls so Done (AnimatedVisibility exit) does not wipe one-tap toggles.
+    val quickFixSession = remember { QuickFixSession() }
 
     BackHandler(enabled = controlsVisible || lakePanelVisible || !chromeVisible) {
         when {
@@ -349,6 +352,7 @@ fun MirrorScreen(
                 },
                 onFocusChange = { activeFocus = it },
                 otaController = otaController,
+                quickFixSession = quickFixSession,
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(

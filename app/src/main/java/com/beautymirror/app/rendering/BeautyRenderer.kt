@@ -50,7 +50,7 @@ class BeautyRenderer(
     private var pendingOutput: Triple<Surface, Int, Int>? = null
 
     @Volatile
-    var settings: BeautySettings = BeautySettings.natural()
+    var settings: BeautySettings = BeautySettings.off()
         set(value) {
             field = value
             glHandler.post { graph?.settings = value }

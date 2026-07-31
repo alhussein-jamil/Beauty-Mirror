@@ -64,7 +64,7 @@ class RenderGraph(context: Context) {
     val timing = FrameTimingCollector()
 
     /** Latest UI/target settings. Displayed values are smoothed via [settingsInterpolator]. */
-    @Volatile var settings: BeautySettings = BeautySettings.natural()
+    @Volatile var settings: BeautySettings = BeautySettings.off()
         set(value) {
             field = value
             settingsInterpolator.setTarget(value)

@@ -13,6 +13,14 @@ import org.robolectric.annotation.Config
 @Config(sdk = [28])
 class SettingsRepositoryTest {
     @Test
+    fun emptyStoreDefaultsToOff() = runTest {
+        val repo = SettingsRepository(RuntimeEnvironment.getApplication())
+        val loaded = repo.settingsFlow.first()
+        assertThat(loaded.preset).isEqualTo(BeautyPreset.OFF)
+        assertThat(loaded.effectsEnabled).isFalse()
+    }
+
+    @Test
     fun customAdvancedFieldsRoundTrip() = runTest {
         val repo = SettingsRepository(RuntimeEnvironment.getApplication())
         val custom = BeautySettings.natural().copy(

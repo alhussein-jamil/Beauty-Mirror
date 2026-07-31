@@ -100,13 +100,16 @@ fun BeautyControls(
     onDismiss: () -> Unit,
     onFocusChange: (BeautyFocus) -> Unit = {},
     otaController: OtaController? = null,
+    /** Hoist above dismiss so one-tap toggles survive Done → reopen. */
+    quickFixSession: QuickFixSession? = null,
     modifier: Modifier = Modifier,
 ) {
     var page by rememberSaveable { mutableStateOf(StudioPage.LOOKS) }
     val context = LocalContext.current
     val language = LanguagePreferences.get(context)
-    val quickFixes = remember { QuickFixSession() }
-    var activeFixes by remember { mutableStateOf(quickFixes.activeIds) }
+    val ownedQuickFixes = remember { QuickFixSession() }
+    val quickFixes = quickFixSession ?: ownedQuickFixes
+    var activeFixes by remember(quickFixes) { mutableStateOf(quickFixes.activeIds) }
     var autoUpdate by remember {
         mutableStateOf(OtaPreferences.isAutoUpdateEnabled(context))
     }
@@ -140,10 +143,21 @@ fun BeautyControls(
         onChange(settings.block().copy(preset = BeautyPreset.CUSTOM).clamped())
     }
 
+    fun clearQuickFixes() {
+        quickFixes.clear()
+        activeFixes = emptySet()
+    }
+
     fun toggleFix(id: String, apply: (BeautySettings) -> BeautySettings) {
         val next = quickFixes.toggle(id, settings, apply)
         activeFixes = quickFixes.activeIds
-        onChange(preserveExperience(next).copy(preset = BeautyPreset.CUSTOM).clamped())
+        // Keep restored baseline preset when the stack is empty (e.g. OFF → fix → undo).
+        val committed = if (activeFixes.isEmpty()) {
+            preserveExperience(next)
+        } else {
+            preserveExperience(next).copy(preset = BeautyPreset.CUSTOM)
+        }
+        onChange(committed.clamped())
     }
 
     fun applyLakeMood(intensity: Float, motion: Float, darkness: Float, clarity: Float) {
@@ -215,7 +229,10 @@ fun BeautyControls(
                 StudioPage.LOOKS -> {
                     PresetSelector(
                         selected = settings.preset,
-                        onSelect = { onChange(preserveExperience(BeautySettings.fromPreset(it, settings))) },
+                        onSelect = {
+                            clearQuickFixes()
+                            onChange(preserveExperience(BeautySettings.fromPreset(it, settings)))
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     SettingSlider(
@@ -223,6 +240,7 @@ fun BeautyControls(
                         value = settings.globalStrength,
                         testTag = "slider_overall",
                     ) {
+                        clearQuickFixes()
                         onChange(preserveExperience(BeautySettings.fromGlobalStrength(it, settings)))
                     }
                     Text(stringResource(R.string.one_tap_corrections), color = BmText, fontSize = 12.sp)
@@ -515,9 +533,8 @@ fun BeautyControls(
         HorizontalDivider(color = BmTextMuted.copy(alpha = 0.13f))
         TextButton(
             onClick = {
-                quickFixes.clear()
-                activeFixes = emptySet()
-                onChange(preserveExperience(BeautySettings.natural()))
+                clearQuickFixes()
+                onChange(preserveExperience(BeautySettings.off()))
             },
             modifier = Modifier
                 .align(Alignment.Start)

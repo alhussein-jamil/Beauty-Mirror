@@ -39,4 +39,21 @@ class QuickFixSessionTest {
         assertThat(restored?.eyeClarity).isEqualTo(0.05f)
         assertThat(session.activeIds).isEmpty()
     }
+
+    @Test
+    fun sameSessionKeepsUndoAfterUiWouldRemount() {
+        val session = QuickFixSession()
+        val base = BeautySettings.off()
+        val applied = session.toggle("fresh_eyes", base) { s ->
+            s.copy(underEyeStrength = 0.72f)
+        }
+        assertThat(session.activeIds).containsExactly("fresh_eyes")
+        // Simulates Done dismissing BeautyControls then reopen with hoisted session.
+        val undone = session.toggle("fresh_eyes", applied) { s ->
+            s.copy(underEyeStrength = 0.72f)
+        }
+        assertThat(undone.underEyeStrength).isWithin(1e-3f).of(0f)
+        assertThat(undone.preset).isEqualTo(BeautyPreset.OFF)
+        assertThat(session.activeIds).isEmpty()
+    }
 }
