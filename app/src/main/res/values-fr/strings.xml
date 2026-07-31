@@ -78,14 +78,14 @@
     <string name="action_reflection_plus">Reflet++</string>
     <string name="scene_moods">Ambiances</string>
     <string name="scene_mood_still_well">Puits calme</string>
-    <string name="scene_mood_still_well_sub">Sombre, posé et très lisible</string>
+    <string name="scene_mood_still_well_sub">Miroir sombre et immobile, visage net</string>
     <string name="scene_mood_marsh">Marais</string>
-    <string name="scene_mood_marsh_sub">Eau organique aux tons profonds</string>
+    <string name="scene_mood_marsh_sub">Tourbe profonde, souffle doux</string>
     <string name="scene_mood_ripple">Onde douce</string>
-    <string name="scene_mood_ripple_sub">Anneaux légers et clarté maximale</string>
+    <string name="scene_mood_ripple_sub">Murmure léger à la surface</string>
     <string name="scene_mood_reveal">Révélation++</string>
-    <string name="scene_mood_reveal_sub">Transformation visiteur la plus marquée</string>
-    <string name="lake_scene_hint">Astuce : utilise Révélation++ ou Puits calme quand la cliente veut un reflet embelli plus fort tout en restant lisible à travers l’eau.</string>
+    <string name="scene_mood_reveal_sub">Onde d’arrivée, puis reflet clair</string>
+    <string name="lake_scene_hint">Astuce : Puits calme = regard de Narcisse — eau sombre comme un verre, visage clair au centre. Monte le mouvement seulement pour un murmure.</string>
 
     <string name="skin_smoothing">Lissage de la peau</string>
     <string name="smoothing_radius">Rayon de lissage</string>

@@ -78,14 +78,14 @@
     <string name="action_reflection_plus">Reflection++</string>
     <string name="scene_moods">Scene moods</string>
     <string name="scene_mood_still_well">Still well</string>
-    <string name="scene_mood_still_well_sub">Dark, calm and very readable</string>
+    <string name="scene_mood_still_well_sub">Glass-still dark pool, face as mirror</string>
     <string name="scene_mood_marsh">Marsh</string>
-    <string name="scene_mood_marsh_sub">Organic water with deep tones</string>
+    <string name="scene_mood_marsh_sub">Deep peat water, soft breath</string>
     <string name="scene_mood_ripple">Soft ripple</string>
-    <string name="scene_mood_ripple_sub">Light rings and maximum clarity</string>
+    <string name="scene_mood_ripple_sub">Gentle hush on the surface</string>
     <string name="scene_mood_reveal">Reveal++</string>
-    <string name="scene_mood_reveal_sub">Most dramatic visitor transformation</string>
-    <string name="lake_scene_hint">Tip: use Reveal++ or Still well when the client wants a stronger beautified reflection that remains readable through the water.</string>
+    <string name="scene_mood_reveal_sub">Arrival wave, then clear reflection</string>
+    <string name="lake_scene_hint">Tip: Still well is the Narcissus look — dark glass water, face clear in the center. Raise motion only if you want a soft hush.</string>
 
     <string name="skin_smoothing">Skin smoothing</string>
     <string name="smoothing_radius">Smoothing radius</string>
