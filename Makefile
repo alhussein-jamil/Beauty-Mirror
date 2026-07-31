@@ -1,6 +1,7 @@
 .DEFAULT_GOAL := apk
 .PHONY: help setup doctor static test lint apk debug quick release all fresh rebuild clean distclean \
-        devices phone deploy run demo expo exhibit install reinstall launch restart stop logs log screenshot fps perf clear-data uninstall where verify check build-apk release-apk
+        devices phone deploy run demo expo exhibit lake install reinstall launch restart stop logs log screenshot fps perf clear-data uninstall where verify check ui-test device-check build-apk release-apk \
+        ship-release
 
 GRADLE := ./tools/gradle-run.sh --no-daemon
 ADB := ./tools/adb-run.sh
@@ -15,7 +16,9 @@ help:
 	  '' \
 	  '  make                 Build the installable debug APK' \
 	  '  make phone           Build, install and launch on a connected phone' \
-	  '  make demo / expo     Launch mirrored Stage mode with the UI hidden' \
+	  '  make demo / expo     Launch Stage mode in the dark-lake exhibition scene' \
+	  '  make ui-test         Run Compose interaction tests on the connected phone' \
+	  '  make device-check    Build, test every UI control, launch and sample FPS' \
 	  '  make release         Build/copy the optimized release APK' \
 	  '  make fresh           Diagnose, clean and rebuild' \
 	  '  make screenshot      Save the phone screen under screenshots/' \
@@ -24,7 +27,8 @@ help:
 	  '  make logs            Follow only Beauty Mirror logs' \
 	  '  make doctor          Diagnose SDK, Java, disk, Gradle and adb' \
 	  '  make where           Print generated APK paths' \
-	  '  make check           Static checks, unit tests, lint and debug APK'
+	  '  make check           Static checks, unit tests, lint and debug APK' \
+	  '  make ship-release    Local APK build + GitHub Release upload (uses tools/ota/token.local)'
 
 setup: doctor
 	@echo 'Environment is ready. Run: make phone'
@@ -49,6 +53,10 @@ release:
 	$(GRADLE) :app:assembleRelease
 	./tools/copy-apks.sh release
 
+ship-release:
+	chmod +x ./tools/release/publish-github-release.sh
+	./tools/release/publish-github-release.sh
+
 all:
 	$(GRADLE) :app:assembleDebug :app:assembleRelease
 	./tools/copy-apks.sh all
@@ -57,6 +65,12 @@ fresh: doctor clean apk
 rebuild: clean apk
 
 check: static test lint apk
+
+ui-test:
+	$(GRADLE) :app:connectedDebugAndroidTest
+
+device-check: check ui-test expo fps
+
 verify:
 	./tools/verify.sh
 
@@ -78,7 +92,7 @@ build-apk: all
 release-apk: release
 
 # Exhibition shortcut: Stage preset, true mirror, controls/system bars initially hidden.
-demo expo exhibit: install
+demo expo exhibit lake: install
 	-$(ADB) shell am force-stop "$(DEBUG_PACKAGE)"
 	$(ADB) shell am start -n "$(COMPONENT)" \
 	  --ez com.beautymirror.app.EXHIBITION_MODE true

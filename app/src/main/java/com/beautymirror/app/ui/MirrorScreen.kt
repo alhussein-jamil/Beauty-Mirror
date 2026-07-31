@@ -9,6 +9,7 @@ import android.os.Build
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -23,7 +24,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,12 +38,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,6 +68,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -84,8 +89,10 @@ import com.beautymirror.app.camera.CaptureSizeCalculator
 import com.beautymirror.app.camera.ProcessedCaptureController
 import com.beautymirror.app.rendering.BeautyRenderer
 import com.beautymirror.app.rendering.FrameTimingCollector
+import com.beautymirror.app.settings.AdaptivePerformanceState
 import com.beautymirror.app.settings.BeautySettings
 import com.beautymirror.app.settings.QualityLevel
+import com.beautymirror.app.settings.ReflectionScene
 import com.beautymirror.app.tracking.FaceTrackingResult
 import com.beautymirror.app.ui.theme.BmAccent
 import com.beautymirror.app.ui.theme.BmBg
@@ -106,6 +113,7 @@ fun MirrorScreen(
     tracking: FaceTrackingResult,
     timing: FrameTimingCollector.Snapshot?,
     runtimeQuality: QualityLevel,
+    performanceState: AdaptivePerformanceState,
     pipelineReady: Boolean = true,
     statusMessage: String? = null,
     startWithChromeHidden: Boolean = false,
@@ -121,6 +129,17 @@ fun MirrorScreen(
     var isCapturing by remember { mutableStateOf(false) }
     var chromeVisible by rememberSaveable { mutableStateOf(!startWithChromeHidden) }
     var controlsVisible by rememberSaveable { mutableStateOf(false) }
+    var lakePanelVisible by rememberSaveable { mutableStateOf(false) }
+    var studioDockTop by rememberSaveable { mutableStateOf(false) }
+    var activeFocus by remember { mutableStateOf(BeautyFocus.OVERVIEW) }
+
+    BackHandler(enabled = controlsVisible || lakePanelVisible || !chromeVisible) {
+        when {
+            lakePanelVisible -> lakePanelVisible = false
+            controlsVisible -> controlsVisible = false
+            !chromeVisible -> chromeVisible = true
+        }
+    }
 
     val needsLegacyStorage = Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
     fun hasLegacyStorage(): Boolean =
@@ -146,20 +165,14 @@ fun MirrorScreen(
         if (pipelineReady) cameraController.start(lifecycleOwner)
     }
 
-    LaunchedEffect(settings.mirrorPreview) {
-        cameraController.setMirrorPreview(settings.mirrorPreview)
-    }
-
-    LaunchedEffect(settings, holdingBeforeAfter) {
-        renderer.settings = settings.copy(
-            showBeforeAfter = holdingBeforeAfter,
-            qualityLevel = renderer.settings.qualityLevel,
-        )
+    LaunchedEffect(holdingBeforeAfter) {
+        renderer.compareHold = holdingBeforeAfter
     }
 
     LaunchedEffect(chromeVisible) {
         if (!chromeVisible) {
             controlsVisible = false
+            lakePanelVisible = false
             holdingBeforeAfter = false
         }
         activity?.window?.let { window ->
@@ -270,15 +283,19 @@ fun MirrorScreen(
             topPanelOffset = if (statusMessage != null) 150.dp else 88.dp,
         )
 
-        // Dismiss layer under chrome controls — tap empty preview closes studio.
-        if (chromeVisible && controlsVisible) {
+        // Dismiss layer under chrome controls — tap empty preview closes studio / lake panel.
+        if (chromeVisible && (controlsVisible || lakePanelVisible)) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.18f))
-                    .pointerInput(Unit) {
-                        detectTapGestures(onTap = { controlsVisible = false })
-                    },
+                    .background(Color.Black.copy(alpha = 0.06f))
+                    .clickable(
+                        onClickLabel = context.getString(R.string.done),
+                        onClick = {
+                            controlsVisible = false
+                            lakePanelVisible = false
+                        },
+                    ),
             )
         }
 
@@ -292,7 +309,77 @@ fun MirrorScreen(
                 tracking = tracking,
                 timing = timing,
                 runtimeQuality = runtimeQuality,
-                onHide = { chromeVisible = false },
+                performanceState = performanceState,
+                reflectionScene = settings.reflectionScene,
+                onSwitchCamera = { scope.launch { cameraController.switchCamera(lifecycleOwner) } },
+                onHide = {
+                    chromeVisible = false
+                    lakePanelVisible = false
+                    controlsVisible = false
+                },
+            )
+        }
+
+        FaceFocusOverlay(
+            tracking = tracking,
+            focus = activeFocus,
+            visible = chromeVisible && controlsVisible,
+        )
+
+        AnimatedVisibility(
+            visible = chromeVisible && controlsVisible,
+            enter = fadeIn() + slideInVertically(
+                initialOffsetY = { if (studioDockTop) -it / 2 else it / 2 },
+            ),
+            exit = fadeOut() + slideOutVertically(
+                targetOffsetY = { if (studioDockTop) -it / 2 else it / 2 },
+            ),
+            modifier = Modifier.align(if (studioDockTop) Alignment.TopCenter else Alignment.BottomCenter),
+        ) {
+            BeautyControls(
+                settings = settings,
+                runtimeQuality = runtimeQuality,
+                performanceState = performanceState,
+                timing = timing,
+                onChange = { onSettingsChange(it.copy(showBeforeAfter = false)) },
+                onDismiss = {
+                    controlsVisible = false
+                },
+                onFocusChange = { activeFocus = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (studioDockTop) {
+                            Modifier
+                                .statusBarsPadding()
+                                .padding(top = 76.dp, start = 12.dp, end = 12.dp)
+                        } else {
+                            Modifier
+                                .navigationBarsPadding()
+                                .padding(bottom = 112.dp, start = 12.dp, end = 12.dp)
+                        },
+                    ),
+            )
+        }
+
+        AnimatedVisibility(
+            visible = chromeVisible && lakePanelVisible,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 3 }),
+            exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 3 }),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            LakeAdjustPanel(
+                settings = settings,
+                onChange = { onSettingsChange(it.copy(showBeforeAfter = false)) },
+                onDismiss = { lakePanelVisible = false },
+                onTurnOff = {
+                    lakePanelVisible = false
+                    onSettingsChange(settings.copy(reflectionScene = ReflectionScene.MIRROR))
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(start = 12.dp, end = 12.dp, bottom = 112.dp),
             )
         }
 
@@ -302,48 +389,56 @@ fun MirrorScreen(
             exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 3 }),
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
-            Column(
+            CaptureDock(
+                isCapturing = isCapturing,
+                pipelineReady = pipelineReady,
+                controlsVisible = controlsVisible,
+                holdingBeforeAfter = holdingBeforeAfter,
+                lakeActive = settings.reflectionScene == ReflectionScene.DARK_LAKE,
+                onToggleLake = {
+                    val lakeOn = settings.reflectionScene == ReflectionScene.DARK_LAKE
+                    when {
+                        !lakeOn -> {
+                            controlsVisible = false
+                            onSettingsChange(settings.copy(reflectionScene = ReflectionScene.DARK_LAKE))
+                            lakePanelVisible = true
+                        }
+                        lakePanelVisible -> {
+                            lakePanelVisible = false
+                            onSettingsChange(settings.copy(reflectionScene = ReflectionScene.MIRROR))
+                        }
+                        else -> {
+                            controlsVisible = false
+                            lakePanelVisible = true
+                        }
+                    }
+                },
+                onToggleControls = {
+                    val opening = !controlsVisible
+                    lakePanelVisible = false
+                    if (opening) {
+                        // Dock controls opposite the current face position and keep them stable
+                        // for the whole editing session so the panel never jumps while posing.
+                        studioDockTop = tracking.isValid && tracking.bounds.centerY > 0.54f
+                        activeFocus = BeautyFocus.OVERVIEW
+                    }
+                    controlsVisible = opening
+                },
+                onCapture = {
+                    scope.launch {
+                        if (!hasLegacyStorage()) {
+                            storageLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        } else {
+                            doCapture()
+                        }
+                    }
+                },
+                onBeforePress = { pressed -> holdingBeforeAfter = pressed },
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                AnimatedVisibility(
-                    visible = controlsVisible,
-                    enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
-                    exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 2 }),
-                ) {
-                    BeautyControls(
-                        settings = settings,
-                        runtimeQuality = runtimeQuality,
-                        timing = timing,
-                        onChange = { onSettingsChange(it.copy(showBeforeAfter = false)) },
-                        onDismiss = { controlsVisible = false },
-                    )
-                }
-                if (controlsVisible) Spacer(Modifier.height(10.dp))
-                CaptureDock(
-                    isCapturing = isCapturing,
-                    pipelineReady = pipelineReady,
-                    controlsVisible = controlsVisible,
-                    holdingBeforeAfter = holdingBeforeAfter,
-                    onSwitchCamera = {
-                        scope.launch { cameraController.switchCamera(lifecycleOwner) }
-                    },
-                    onToggleControls = { controlsVisible = !controlsVisible },
-                    onCapture = {
-                        scope.launch {
-                            if (!hasLegacyStorage()) {
-                                storageLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                            } else {
-                                doCapture()
-                            }
-                        }
-                    },
-                    onBeforePress = { pressed -> holdingBeforeAfter = pressed },
-                )
-            }
+            )
         }
 
         if (!chromeVisible) {
@@ -362,7 +457,10 @@ fun MirrorScreen(
                 shape = CircleShape,
                 color = BmSurface,
             ) {
-                IconButton(onClick = { chromeVisible = true }) {
+                IconButton(
+                    onClick = { chromeVisible = true },
+                    modifier = Modifier.testTag("show_chrome"),
+                ) {
                     Icon(
                         Icons.Default.Visibility,
                         contentDescription = context.getString(R.string.show_overlay),
@@ -437,11 +535,16 @@ private fun TopChrome(
     tracking: FaceTrackingResult,
     timing: FrameTimingCollector.Snapshot?,
     runtimeQuality: QualityLevel,
+    performanceState: AdaptivePerformanceState,
+    reflectionScene: ReflectionScene,
+    onSwitchCamera: () -> Unit,
     onHide: () -> Unit,
 ) {
     val context = LocalContext.current
     val fps = timing?.cameraFps ?: 0.0
-    val fpsHealthy = fps <= 0.0 || fps >= 29.0
+    val cameraLimited = performanceState.cameraLimited
+    val fpsHealthy = fps <= 0.0 || fps >= 29.0 || cameraLimited
+    val protecting = performanceState.protecting && !cameraLimited
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -461,10 +564,18 @@ private fun TopChrome(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = if (tracking.isValid) {
-                        context.getString(R.string.face_locked)
-                    } else {
-                        context.getString(R.string.finding_face)
+                    text = buildString {
+                        append(
+                            if (tracking.isValid) {
+                                context.getString(R.string.face_locked)
+                            } else {
+                                context.getString(R.string.finding_face)
+                            },
+                        )
+                        if (reflectionScene == ReflectionScene.DARK_LAKE) {
+                            append(" · ")
+                            append(context.getString(R.string.dark_lake).uppercase())
+                        }
                     },
                     color = if (tracking.isValid) BmAccent else BmTextMuted,
                     style = MaterialTheme.typography.labelSmall,
@@ -486,7 +597,12 @@ private fun TopChrome(
                 ) {
                     Text(
                         text = if (fps > 0.0) "%.0f FPS".format(fps) else context.getString(R.string.fps_measuring),
-                        color = if (fpsHealthy) BmText else BmDanger,
+                        color = when {
+                            cameraLimited -> BmTextMuted
+                            !fpsHealthy -> BmDanger
+                            protecting -> BmAccent
+                            else -> BmText
+                        },
                         fontSize = 12.sp,
                     )
                     Text(
@@ -496,11 +612,23 @@ private fun TopChrome(
                     )
                 }
             }
-            Surface(
-                shape = CircleShape,
-                color = BmSurface,
-            ) {
-                IconButton(onClick = onHide) {
+            Surface(shape = CircleShape, color = BmSurface) {
+                IconButton(
+                    onClick = onSwitchCamera,
+                    modifier = Modifier.testTag("switch_camera"),
+                ) {
+                    Icon(
+                        Icons.Default.Cameraswitch,
+                        contentDescription = context.getString(R.string.switch_camera),
+                        tint = BmText,
+                    )
+                }
+            }
+            Surface(shape = CircleShape, color = BmSurface) {
+                IconButton(
+                    onClick = onHide,
+                    modifier = Modifier.testTag("hide_chrome"),
+                ) {
                     Icon(
                         Icons.Default.VisibilityOff,
                         contentDescription = context.getString(R.string.hide_overlay),
@@ -513,19 +641,115 @@ private fun TopChrome(
 }
 
 @Composable
+private fun LakeAdjustPanel(
+    settings: BeautySettings,
+    onChange: (BeautySettings) -> Unit,
+    onDismiss: () -> Unit,
+    onTurnOff: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier
+            .clickable(onClick = {})
+            .testTag("lake_adjust_panel"),
+        shape = RoundedCornerShape(24.dp),
+        color = BmSurface,
+        shadowElevation = 10.dp,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.dark_lake), color = BmText, fontSize = 16.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(
+                        onClick = onTurnOff,
+                        modifier = Modifier.defaultMinSize(minHeight = 40.dp),
+                    ) {
+                        Text(stringResource(R.string.off), color = BmTextMuted)
+                    }
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.defaultMinSize(minHeight = 40.dp),
+                    ) {
+                        Text(stringResource(R.string.done), color = BmAccent)
+                    }
+                }
+            }
+            LakeSliderRow(
+                title = stringResource(R.string.lake_intensity),
+                value = settings.lakeIntensity,
+                testTag = "popup_lake_intensity",
+            ) { onChange(settings.copy(lakeIntensity = it).clamped()) }
+            LakeSliderRow(
+                title = stringResource(R.string.lake_motion),
+                value = settings.lakeMotion,
+                testTag = "popup_lake_motion",
+            ) { onChange(settings.copy(lakeMotion = it).clamped()) }
+            LakeSliderRow(
+                title = stringResource(R.string.lake_darkness),
+                value = settings.lakeDarkness,
+                testTag = "popup_lake_darkness",
+            ) { onChange(settings.copy(lakeDarkness = it).clamped()) }
+        }
+    }
+}
+
+@Composable
+private fun LakeSliderRow(
+    title: String,
+    value: Float,
+    testTag: String,
+    onValue: (Float) -> Unit,
+) {
+    val safe = value.coerceIn(0f, 1f)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(title, color = BmText, fontSize = 12.sp)
+            Text("${(safe * 100).toInt()}%", color = BmAccent, fontSize = 10.sp)
+        }
+        Slider(
+            value = safe,
+            onValueChange = onValue,
+            modifier = Modifier
+                .height(36.dp)
+                .testTag(testTag),
+            colors = SliderDefaults.colors(
+                thumbColor = BmAccent,
+                activeTrackColor = BmAccent,
+                inactiveTrackColor = BmTextMuted.copy(alpha = 0.18f),
+            ),
+        )
+    }
+}
+
+@Composable
 private fun CaptureDock(
     isCapturing: Boolean,
     pipelineReady: Boolean,
     controlsVisible: Boolean,
     holdingBeforeAfter: Boolean,
-    onSwitchCamera: () -> Unit,
+    lakeActive: Boolean,
+    onToggleLake: () -> Unit,
     onToggleControls: () -> Unit,
     onCapture: () -> Unit,
     onBeforePress: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         shape = RoundedCornerShape(30.dp),
         color = BmSurfaceStrong,
         shadowElevation = 12.dp,
@@ -542,17 +766,20 @@ private fun CaptureDock(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 DockAction(
-                    icon = Icons.Default.Cameraswitch,
-                    label = context.getString(R.string.flip),
-                    description = context.getString(R.string.switch_camera),
-                    enabled = !isCapturing && pipelineReady,
-                    onClick = onSwitchCamera,
+                    icon = Icons.Default.WaterDrop,
+                    label = context.getString(R.string.lake),
+                    description = context.getString(R.string.toggle_lake),
+                    active = lakeActive,
+                    enabled = pipelineReady,
+                    testTag = "dock_lake",
+                    onClick = onToggleLake,
                 )
                 DockAction(
                     icon = Icons.Default.Tune,
                     label = context.getString(R.string.studio),
                     description = context.getString(R.string.toggle_controls),
                     active = controlsVisible,
+                    testTag = "dock_studio",
                     onClick = onToggleControls,
                 )
             }
@@ -573,7 +800,8 @@ private fun CaptureDock(
                             role = Role.Button
                             contentDescription = context.getString(R.string.capture_photo)
                         }
-                        .clickable(enabled = !isCapturing && pipelineReady, onClick = onCapture),
+                        .clickable(enabled = !isCapturing && pipelineReady, onClick = onCapture)
+                        .testTag("capture"),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (isCapturing) {
@@ -594,7 +822,8 @@ private fun CaptureDock(
                         role = Role.Button
                         contentDescription = context.getString(R.string.hold_for_before_after)
                     }
-                    .pointerInput(Unit) {
+                    .testTag("compare")
+                    .pointerInput(onBeforePress) {
                         detectTapGestures(
                             onPress = {
                                 onBeforePress(true)
@@ -639,13 +868,15 @@ private fun DockAction(
     description: String,
     active: Boolean = false,
     enabled: Boolean = true,
+    testTag: String,
     onClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .size(56.dp)
             .clip(RoundedCornerShape(16.dp))
-            .clickable(enabled = enabled, onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick)
+            .testTag(testTag),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

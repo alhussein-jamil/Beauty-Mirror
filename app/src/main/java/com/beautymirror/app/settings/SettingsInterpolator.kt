@@ -3,18 +3,19 @@ package com.beautymirror.app.settings
 import com.beautymirror.app.util.MathUtils
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.pow
 
 /**
  * Smooths beauty parameters for the GPU path.
  *
  * Interpolation stays off until [markEffectsApplied] runs at least once (full effect stack
- * with live tracking). Until then target snaps through. Param changes also pulse [dimAmount]
- * so the composite can briefly darken the preview while the new look settles.
+ * with live tracking). Until then target snaps through. Interpolation is normalized to a 30 FPS
+ * reference so the same slider movement feels identical on 24, 30, 60 or variable-rate previews.
  */
 class SettingsInterpolator(
     private val lerpAlpha: Float = 0.28f,
-    private val dimPulse: Float = 0.32f,
-    private val dimDecay: Float = 0.86f,
+    private val dimPulse: Float = 0.22f,
+    private val dimDecay: Float = 0.70f,
 ) {
     private var target: BeautySettings = BeautySettings.natural()
     private var current: BeautySettings = BeautySettings.natural()
@@ -58,16 +59,19 @@ class SettingsInterpolator(
     }
 
     /** Advance one display frame. Returns settings the GPU should use. */
-    fun tick(): BeautySettings {
+    fun tick(deltaSeconds: Float = 1f / 30f): BeautySettings {
+        val referenceFrames = (deltaSeconds.coerceIn(0f, 0.10f) * 30f).coerceAtLeast(0f)
+        val frameAlpha = 1f - (1f - lerpAlpha.coerceIn(0f, 1f)).pow(referenceFrames)
+        val frameDimDecay = dimDecay.coerceIn(0f, 1f).pow(referenceFrames)
         if (!effectsAppliedOnce) {
             current = target
-            dimAmount *= dimDecay
+            dimAmount *= frameDimDecay
             if (dimAmount < 0.01f) dimAmount = 0f
             return current
         }
 
         // After the first full apply, blend toward the latest target.
-        current = lerpSettings(current, target, lerpAlpha)
+        current = lerpSettings(current, target, frameAlpha)
         current = mergeNonLerped(target, current)
 
         if (pendingVisualChange && nearTarget(current, target)) {
@@ -75,7 +79,7 @@ class SettingsInterpolator(
             current = mergeNonLerped(target, target)
         }
 
-        dimAmount *= dimDecay
+        dimAmount *= frameDimDecay
         if (dimAmount < 0.01f) dimAmount = 0f
         return current
     }
@@ -115,6 +119,11 @@ class SettingsInterpolator(
                 abs(a.faceSlimming - b.faceSlimming) > 0.001f ||
                 abs(a.eyeEnlargement - b.eyeEnlargement) > 0.001f ||
                 abs(a.noseRefinement - b.noseRefinement) > 0.001f ||
+                abs(a.lakeIntensity - b.lakeIntensity) > 0.001f ||
+                abs(a.lakeMotion - b.lakeMotion) > 0.001f ||
+                abs(a.lakeDarkness - b.lakeDarkness) > 0.001f ||
+                abs(a.lakeFaceClarity - b.lakeFaceClarity) > 0.001f ||
+                a.reflectionScene != b.reflectionScene ||
                 a.preset != b.preset ||
                 a.effectsEnabled != b.effectsEnabled
         }
@@ -129,6 +138,7 @@ class SettingsInterpolator(
                 showBeforeAfter = from.showBeforeAfter,
                 debugOverlay = from.debugOverlay,
                 mirrorPreview = from.mirrorPreview,
+                reflectionScene = from.reflectionScene,
             )
 
         fun lerpSettings(from: BeautySettings, to: BeautySettings, t: Float): BeautySettings {
@@ -168,6 +178,10 @@ class SettingsInterpolator(
                 faceSlimming = L(from.faceSlimming, to.faceSlimming),
                 eyeEnlargement = L(from.eyeEnlargement, to.eyeEnlargement),
                 noseRefinement = L(from.noseRefinement, to.noseRefinement),
+                lakeIntensity = L(from.lakeIntensity, to.lakeIntensity),
+                lakeMotion = L(from.lakeMotion, to.lakeMotion),
+                lakeDarkness = L(from.lakeDarkness, to.lakeDarkness),
+                lakeFaceClarity = L(from.lakeFaceClarity, to.lakeFaceClarity),
             )
         }
     }

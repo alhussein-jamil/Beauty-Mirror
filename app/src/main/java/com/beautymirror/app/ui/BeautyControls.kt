@@ -6,18 +6,27 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Compare
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
@@ -33,20 +42,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.testTag
 import com.beautymirror.app.BuildConfig
 import com.beautymirror.app.R
 import com.beautymirror.app.rendering.FrameTimingCollector
+import com.beautymirror.app.settings.AdaptivePerformanceState
 import com.beautymirror.app.settings.AppLanguage
 import com.beautymirror.app.settings.BeautyPreset
 import com.beautymirror.app.settings.BeautySettings
 import com.beautymirror.app.settings.LanguagePreferences
 import com.beautymirror.app.settings.QualityLevel
+import com.beautymirror.app.settings.QuickFixSession
+import com.beautymirror.app.settings.ReflectionScene
 import com.beautymirror.app.ui.theme.BmAccent
 import com.beautymirror.app.ui.theme.BmBg
 import com.beautymirror.app.ui.theme.BmDanger
@@ -58,466 +75,304 @@ import com.beautymirror.app.ui.theme.BmTextMuted
 private enum class StudioPage(
     @StringRes val labelRes: Int,
     val focus: BeautyFocus,
-    @StringRes val guideTitleRes: Int,
-    @StringRes val guideDescriptionRes: Int,
 ) {
-    QUICK(
-        R.string.page_quick,
-        BeautyFocus.OVERVIEW,
-        R.string.guide_quick_title,
-        R.string.guide_quick_desc,
-    ),
-    SKIN(
-        R.string.page_skin,
-        BeautyFocus.SKIN,
-        R.string.guide_skin_title,
-        R.string.guide_skin_desc,
-    ),
-    UNDER_EYES(
-        R.string.page_under_eyes,
-        BeautyFocus.UNDER_EYES,
-        R.string.guide_under_eyes_title,
-        R.string.guide_under_eyes_desc,
-    ),
-    EYES(
-        R.string.page_eyes,
-        BeautyFocus.EYES,
-        R.string.guide_eyes_title,
-        R.string.guide_eyes_desc,
-    ),
-    LIPS(
-        R.string.page_lips,
-        BeautyFocus.LIPS,
-        R.string.guide_lips_title,
-        R.string.guide_lips_desc,
-    ),
-    SHAPE(
-        R.string.page_shape,
-        BeautyFocus.SHAPE,
-        R.string.guide_shape_title,
-        R.string.guide_shape_desc,
-    ),
-    SYSTEM(
-        R.string.page_system,
-        BeautyFocus.SYSTEM,
-        R.string.guide_system_title,
-        R.string.guide_system_desc,
-    ),
+    LOOKS(R.string.page_quick, BeautyFocus.OVERVIEW),
+    SKIN(R.string.page_skin, BeautyFocus.SKIN),
+    EYES(R.string.page_eyes, BeautyFocus.EYES),
+    LIPS(R.string.page_lips, BeautyFocus.LIPS),
+    SHAPE(R.string.page_shape, BeautyFocus.SHAPE),
+    SCENE(R.string.page_scene, BeautyFocus.SCENE),
+    SYSTEM(R.string.page_system, BeautyFocus.SYSTEM),
 }
 
 @Composable
 fun BeautyControls(
     settings: BeautySettings,
     runtimeQuality: QualityLevel,
+    performanceState: AdaptivePerformanceState,
     timing: FrameTimingCollector.Snapshot?,
     onChange: (BeautySettings) -> Unit,
     onDismiss: () -> Unit,
+    onFocusChange: (BeautyFocus) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    var page by rememberSaveable { mutableStateOf(StudioPage.QUICK) }
+    var page by rememberSaveable { mutableStateOf(StudioPage.LOOKS) }
     val context = LocalContext.current
     val language = LanguagePreferences.get(context)
-    var activeFixes by rememberSaveable { mutableStateOf(setOf<String>()) }
-    val fixSnapshots = remember { mutableMapOf<String, BeautySettings>() }
+    val quickFixes = remember { QuickFixSession() }
+    var activeFixes by remember { mutableStateOf(quickFixes.activeIds) }
 
-    fun preserveSystem(target: BeautySettings): BeautySettings = target.copy(
+    fun preserveExperience(target: BeautySettings): BeautySettings = target.copy(
         qualityLevel = settings.qualityLevel,
         debugOverlay = settings.debugOverlay,
         mirrorPreview = settings.mirrorPreview,
+        reflectionScene = settings.reflectionScene,
+        lakeIntensity = settings.lakeIntensity,
+        lakeMotion = settings.lakeMotion,
+        lakeDarkness = settings.lakeDarkness,
+        lakeFaceClarity = settings.lakeFaceClarity,
     )
-
-    fun toggleFix(id: String, apply: (BeautySettings) -> BeautySettings) {
-        if (id in activeFixes) {
-            val prior = fixSnapshots.remove(id)
-            if (prior != null) {
-                onChange(preserveSystem(prior).copy(preset = BeautyPreset.CUSTOM).clamped())
-            }
-            activeFixes = activeFixes - id
-        } else {
-            fixSnapshots[id] = settings
-            onChange(preserveSystem(apply(settings)).copy(preset = BeautyPreset.CUSTOM).clamped())
-            activeFixes = activeFixes + id
-        }
-    }
 
     fun custom(block: BeautySettings.() -> BeautySettings) {
         onChange(settings.block().copy(preset = BeautyPreset.CUSTOM).clamped())
     }
 
+    fun toggleFix(id: String, apply: (BeautySettings) -> BeautySettings) {
+        val next = quickFixes.toggle(id, settings, apply)
+        activeFixes = quickFixes.activeIds
+        onChange(preserveExperience(next).copy(preset = BeautyPreset.CUSTOM).clamped())
+    }
+
+    val panelHeight = (LocalConfiguration.current.screenHeightDp * 0.62f)
+        .coerceIn(460f, 700f)
+        .dp
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(max = 520.dp)
-            .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp, bottomStart = 24.dp, bottomEnd = 24.dp))
+            .height(panelHeight)
+            .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 22.dp, bottomEnd = 22.dp))
             .background(BmSurface)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .clickable(onClick = {})
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .testTag("beauty_studio"),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .width(36.dp)
+                .height(4.dp)
+                .clip(CircleShape)
+                .background(BmTextMuted.copy(alpha = 0.28f)),
+        )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
-                Text(stringResource(R.string.beauty_studio), color = BmText, fontSize = 19.sp)
-                Text(
-                    text = stringResource(
-                        R.string.studio_subtitle,
-                        stringResource(settings.preset.labelRes()),
-                    ),
-                    color = BmTextMuted,
-                    fontSize = 11.sp,
-                )
-            }
-            TextButton(onClick = onDismiss) {
+            Text(stringResource(R.string.beauty_studio), color = BmText, fontSize = 17.sp)
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.defaultMinSize(minHeight = 44.dp),
+            ) {
                 Text(stringResource(R.string.done), color = BmAccent)
             }
         }
 
-        PresetSelector(
-            selected = settings.preset,
-            onSelect = { onChange(preserveSystem(BeautySettings.fromPreset(it, settings))) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            StudioPage.entries.forEach { item ->
-                val selected = item == page
-                Text(
-                    text = stringResource(item.labelRes),
-                    color = if (selected) BmBg else BmTextMuted,
-                    fontSize = 11.sp,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (selected) BmAccent else BmSurfaceStrong)
-                        .clickable { page = item }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                )
-            }
-        }
-
-        BeautyFeatureGuide(
-            focus = page.focus,
-            title = stringResource(page.guideTitleRes),
-            description = stringResource(page.guideDescriptionRes),
+        StudioNavigation(
+            selected = page,
+            onSelected = {
+                page = it
+                onFocusChange(it.focus)
+            },
         )
 
         Column(
             modifier = Modifier
-                .heightIn(max = 220.dp)
+                .weight(1f, fill = true)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             when (page) {
-                StudioPage.QUICK -> {
+                StudioPage.LOOKS -> {
+                    PresetSelector(
+                        selected = settings.preset,
+                        onSelect = { onChange(preserveExperience(BeautySettings.fromPreset(it, settings))) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                     SettingSlider(
                         title = stringResource(R.string.overall_intensity),
-                        subtitle = stringResource(R.string.overall_intensity_sub),
                         value = settings.globalStrength,
+                        testTag = "slider_overall",
                     ) {
-                        onChange(
-                            preserveSystem(
-                                BeautySettings.fromGlobalStrength(it, settings),
-                            ),
-                        )
+                        onChange(preserveExperience(BeautySettings.fromGlobalStrength(it, settings)))
                     }
-                    Text(stringResource(R.string.one_tap_corrections), color = BmText, fontSize = 13.sp)
+                    Text(stringResource(R.string.one_tap_corrections), color = BmText, fontSize = 12.sp)
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        SmartAction(
+                        OutcomeCard(
                             title = stringResource(R.string.action_fresh_eyes),
-                            subtitle = stringResource(R.string.action_fresh_eyes_sub),
+                            icon = Icons.Default.Visibility,
                             active = "fresh_eyes" in activeFixes,
-                            onClick = {
-                                toggleFix("fresh_eyes") { s ->
-                                    s.copy(
-                                        underEyeStrength = maxOf(s.underEyeStrength, 0.72f),
-                                        underEyeSmoothing = maxOf(s.underEyeSmoothing, 0.55f),
-                                        underEyeMaximumLift = maxOf(s.underEyeMaximumLift, 0.24f),
-                                        underEyeColorCorrection = maxOf(s.underEyeColorCorrection, 0.60f),
-                                        eyeClarity = maxOf(s.eyeClarity, 0.38f),
-                                        eyeSparkle = maxOf(s.eyeSparkle, 0.32f),
-                                        eyeBrightening = maxOf(s.eyeBrightening, 0.22f),
-                                    )
-                                }
-                            },
-                        )
-                        SmartAction(
-                            title = stringResource(R.string.action_clear_blemishes),
-                            subtitle = stringResource(R.string.action_clear_blemishes_sub),
-                            active = "clear_blemishes" in activeFixes,
-                            onClick = {
-                                toggleFix("clear_blemishes") { s ->
-                                    s.copy(
-                                        blemishControl = maxOf(s.blemishControl, 0.78f),
-                                        rednessCorrection = maxOf(s.rednessCorrection, 0.55f),
-                                        complexionEvenness = maxOf(s.complexionEvenness, 0.52f),
-                                        smoothingStrength = maxOf(s.smoothingStrength, 0.58f),
-                                        smoothingRadius = maxOf(s.smoothingRadius, 5.2f),
-                                    )
-                                }
-                            },
-                        )
-                        SmartAction(
+                            modifier = Modifier.weight(1f),
+                            testTag = "action_fresh_eyes",
+                        ) {
+                            toggleFix("fresh_eyes") { s ->
+                                s.copy(
+                                    underEyeStrength = maxOf(s.underEyeStrength, 0.72f),
+                                    underEyeSmoothing = maxOf(s.underEyeSmoothing, 0.54f),
+                                    underEyeMaximumLift = maxOf(s.underEyeMaximumLift, 0.23f),
+                                    underEyeColorCorrection = maxOf(s.underEyeColorCorrection, 0.60f),
+                                    eyeClarity = maxOf(s.eyeClarity, 0.38f),
+                                    eyeSparkle = maxOf(s.eyeSparkle, 0.28f),
+                                    eyeBrightening = maxOf(s.eyeBrightening, 0.22f),
+                                )
+                            }
+                        }
+                        OutcomeCard(
                             title = stringResource(R.string.action_even_skin),
-                            subtitle = stringResource(R.string.action_even_skin_sub),
+                            icon = Icons.Default.Tune,
                             active = "even_skin" in activeFixes,
-                            onClick = {
-                                toggleFix("even_skin") { s ->
-                                    s.copy(
-                                        smoothingStrength = maxOf(s.smoothingStrength, 0.65f),
-                                        smoothingRadius = maxOf(s.smoothingRadius, 5.8f),
-                                        complexionEvenness = maxOf(s.complexionEvenness, 0.50f),
-                                        blemishControl = maxOf(s.blemishControl, 0.48f),
-                                        rednessCorrection = maxOf(s.rednessCorrection, 0.34f),
-                                        shineControl = maxOf(s.shineControl, 0.40f),
-                                        skinGlow = maxOf(s.skinGlow, 0.22f),
-                                    )
-                                }
-                            },
-                        )
-                        SmartAction(
-                            title = stringResource(R.string.action_defined_features),
-                            subtitle = stringResource(R.string.action_defined_features_sub),
-                            active = "defined_features" in activeFixes,
-                            onClick = {
-                                toggleFix("defined_features") { s ->
-                                    s.copy(
-                                        eyeClarity = maxOf(s.eyeClarity, 0.40f),
-                                        eyeSparkle = maxOf(s.eyeSparkle, 0.34f),
-                                        browDefinition = maxOf(s.browDefinition, 0.32f),
-                                        lipEnhancement = maxOf(s.lipEnhancement, 0.28f),
-                                        lipDefinition = maxOf(s.lipDefinition, 0.38f),
-                                        lipTintStrength = maxOf(s.lipTintStrength, 0.30f),
-                                        contourStrength = maxOf(s.contourStrength, 0.30f),
-                                    )
-                                }
-                            },
-                        )
-                        SmartAction(
-                            title = stringResource(R.string.action_stage_ready),
-                            subtitle = stringResource(R.string.action_stage_ready_sub),
-                            active = "stage_ready" in activeFixes,
-                            onClick = {
-                                toggleFix("stage_ready") { _ -> BeautySettings.stage() }
-                            },
-                        )
+                            modifier = Modifier.weight(1f),
+                            testTag = "action_even_skin",
+                        ) {
+                            toggleFix("even_skin") { s ->
+                                s.copy(
+                                    smoothingStrength = maxOf(s.smoothingStrength, 0.64f),
+                                    smoothingRadius = maxOf(s.smoothingRadius, 5.7f),
+                                    complexionEvenness = maxOf(s.complexionEvenness, 0.50f),
+                                    blemishControl = maxOf(s.blemishControl, 0.48f),
+                                    rednessCorrection = maxOf(s.rednessCorrection, 0.34f),
+                                    shineControl = maxOf(s.shineControl, 0.38f),
+                                    skinGlow = maxOf(s.skinGlow, 0.22f),
+                                )
+                            }
+                        }
                     }
-                    InfoCard(stringResource(R.string.info_compare))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        OutcomeCard(
+                            title = stringResource(R.string.action_clear_blemishes),
+                            icon = Icons.Default.Tune,
+                            active = "clear_blemishes" in activeFixes,
+                            modifier = Modifier.weight(1f),
+                            testTag = "action_clear_blemishes",
+                        ) {
+                            toggleFix("clear_blemishes") { s ->
+                                s.copy(
+                                    blemishControl = maxOf(s.blemishControl, 0.78f),
+                                    rednessCorrection = maxOf(s.rednessCorrection, 0.55f),
+                                    complexionEvenness = maxOf(s.complexionEvenness, 0.52f),
+                                    smoothingStrength = maxOf(s.smoothingStrength, 0.58f),
+                                    smoothingRadius = maxOf(s.smoothingRadius, 5.2f),
+                                )
+                            }
+                        }
+                        OutcomeCard(
+                            title = stringResource(R.string.action_defined_features),
+                            icon = Icons.Default.Compare,
+                            active = "defined_features" in activeFixes,
+                            modifier = Modifier.weight(1f),
+                            testTag = "action_defined_features",
+                        ) {
+                            toggleFix("defined_features") { s ->
+                                s.copy(
+                                    eyeClarity = maxOf(s.eyeClarity, 0.42f),
+                                    browDefinition = maxOf(s.browDefinition, 0.30f),
+                                    lipEnhancement = maxOf(s.lipEnhancement, 0.34f),
+                                    lipDefinition = maxOf(s.lipDefinition, 0.38f),
+                                    lipTintStrength = maxOf(s.lipTintStrength, 0.30f),
+                                    contourStrength = maxOf(s.contourStrength, 0.28f),
+                                )
+                            }
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        OutcomeCard(
+                            title = stringResource(R.string.action_stage_ready),
+                            icon = Icons.Default.WaterDrop,
+                            active = "stage_ready" in activeFixes,
+                            modifier = Modifier.weight(1f),
+                            testTag = "action_stage_ready",
+                        ) {
+                            toggleFix("stage_ready") { _ -> BeautySettings.stage() }
+                        }
+                    }
                 }
 
                 StudioPage.SKIN -> {
-                    SettingSlider(
-                        stringResource(R.string.skin_smoothing),
-                        stringResource(R.string.skin_smoothing_sub),
-                        settings.smoothingStrength,
-                    ) { custom { copy(smoothingStrength = it) } }
-                    SettingSlider(
-                        stringResource(R.string.smoothing_radius),
-                        stringResource(R.string.smoothing_radius_sub),
-                        ((settings.smoothingRadius - 0.5f) / 7.5f).coerceIn(0f, 1f),
-                    ) { custom { copy(smoothingRadius = 0.5f + it * 7.5f) } }
-                    SettingSlider(
-                        stringResource(R.string.texture_retention),
-                        stringResource(R.string.texture_retention_sub),
-                        settings.detailRetention,
-                    ) { custom { copy(detailRetention = it) } }
-                    SettingSlider(
-                        stringResource(R.string.complexion_evenness),
-                        stringResource(R.string.complexion_evenness_sub),
-                        settings.complexionEvenness,
-                    ) { custom { copy(complexionEvenness = it) } }
-                    SettingSlider(
-                        stringResource(R.string.acne_blemishes),
-                        stringResource(R.string.acne_blemishes_sub),
-                        settings.blemishControl,
-                    ) { custom { copy(blemishControl = it) } }
-                    SettingSlider(
-                        stringResource(R.string.redness_correction),
-                        stringResource(R.string.redness_correction_sub),
-                        settings.rednessCorrection,
-                    ) { custom { copy(rednessCorrection = it) } }
-                    SettingSlider(
-                        stringResource(R.string.shine_control),
-                        stringResource(R.string.shine_control_sub),
-                        settings.shineControl,
-                    ) { custom { copy(shineControl = it) } }
-                    SettingSlider(
-                        stringResource(R.string.skin_glow),
-                        stringResource(R.string.skin_glow_sub),
-                        settings.skinGlow,
-                    ) { custom { copy(skinGlow = it) } }
-                    SettingSlider(
-                        stringResource(R.string.face_light),
-                        stringResource(R.string.face_light_sub),
-                        ((settings.faceExposure + 0.3f) / 0.8f).coerceIn(0f, 1f),
-                    ) { custom { copy(faceExposure = it * 0.8f - 0.3f) } }
-                    SettingSlider(
-                        stringResource(R.string.shadow_lift),
-                        stringResource(R.string.shadow_lift_sub),
-                        settings.shadowLift * 2f,
-                    ) { custom { copy(shadowLift = it * 0.5f) } }
-                    SettingSlider(
-                        stringResource(R.string.highlight_protection),
-                        stringResource(R.string.highlight_protection_sub),
-                        settings.highlightProtection,
-                    ) { custom { copy(highlightProtection = it) } }
-                    SettingSlider(
-                        stringResource(R.string.warmth),
-                        stringResource(R.string.warmth_sub),
-                        (settings.warmth + 0.5f).coerceIn(0f, 1f),
-                    ) { custom { copy(warmth = it - 0.5f) } }
-                    SettingSlider(
-                        stringResource(R.string.local_contrast),
-                        stringResource(R.string.local_contrast_sub),
-                        settings.localContrast / 0.6f,
-                    ) { custom { copy(localContrast = it * 0.6f) } }
-                }
-
-                StudioPage.UNDER_EYES -> {
-                    SettingSlider(
-                        stringResource(R.string.dark_circle_correction),
-                        stringResource(R.string.dark_circle_correction_sub),
-                        settings.underEyeStrength,
-                    ) { custom { copy(underEyeStrength = it) } }
-                    SettingSlider(
-                        stringResource(R.string.puffiness_soften),
-                        stringResource(R.string.puffiness_soften_sub),
-                        settings.underEyeSmoothing,
-                    ) { custom { copy(underEyeSmoothing = it) } }
-                    SettingSlider(
-                        stringResource(R.string.maximum_lift),
-                        stringResource(R.string.maximum_lift_sub),
-                        (settings.underEyeMaximumLift / 0.4f).coerceIn(0f, 1f),
-                    ) { custom { copy(underEyeMaximumLift = it * 0.4f) } }
-                    SettingSlider(
-                        stringResource(R.string.blue_purple_neutralization),
-                        stringResource(R.string.blue_purple_neutralization_sub),
-                        settings.underEyeColorCorrection,
-                    ) { custom { copy(underEyeColorCorrection = it) } }
-                    InfoCard(stringResource(R.string.info_under_eyes))
+                    SettingSlider(stringResource(R.string.skin_smoothing), settings.smoothingStrength, "slider_smoothing") { custom { copy(smoothingStrength = it) } }
+                    SettingSlider(stringResource(R.string.smoothing_radius), ((settings.smoothingRadius - 0.5f) / 7.5f).coerceIn(0f, 1f), "slider_smoothing_radius") { custom { copy(smoothingRadius = 0.5f + it * 7.5f) } }
+                    SettingSlider(stringResource(R.string.texture_retention), settings.detailRetention, "slider_texture") { custom { copy(detailRetention = it) } }
+                    SettingSlider(stringResource(R.string.complexion_evenness), settings.complexionEvenness, "slider_complexion") { custom { copy(complexionEvenness = it) } }
+                    SettingSlider(stringResource(R.string.acne_blemishes), settings.blemishControl, "slider_blemish") { custom { copy(blemishControl = it) } }
+                    SettingSlider(stringResource(R.string.redness_correction), settings.rednessCorrection, "slider_redness") { custom { copy(rednessCorrection = it) } }
+                    SettingSlider(stringResource(R.string.shine_control), settings.shineControl, "slider_shine") { custom { copy(shineControl = it) } }
+                    SettingSlider(stringResource(R.string.skin_glow), settings.skinGlow, "slider_glow") { custom { copy(skinGlow = it) } }
+                    SettingSlider(stringResource(R.string.face_light), ((settings.faceExposure + 0.3f) / 0.8f).coerceIn(0f, 1f), "slider_face_light") { custom { copy(faceExposure = it * 0.8f - 0.3f) } }
+                    SettingSlider(stringResource(R.string.shadow_lift), settings.shadowLift * 2f, "slider_shadow") { custom { copy(shadowLift = it * 0.5f) } }
                 }
 
                 StudioPage.EYES -> {
-                    SettingSlider(
-                        stringResource(R.string.eye_clarity),
-                        stringResource(R.string.eye_clarity_sub),
-                        settings.eyeClarity / 0.8f,
-                    ) { custom { copy(eyeClarity = it * 0.8f) } }
-                    SettingSlider(
-                        stringResource(R.string.eye_brightening),
-                        stringResource(R.string.eye_brightening_sub),
-                        settings.eyeBrightening,
-                    ) { custom { copy(eyeBrightening = it) } }
-                    SettingSlider(
-                        stringResource(R.string.eye_sparkle),
-                        stringResource(R.string.eye_sparkle_sub),
-                        settings.eyeSparkle,
-                    ) { custom { copy(eyeSparkle = it) } }
-                    SettingSlider(
-                        stringResource(R.string.brow_definition),
-                        stringResource(R.string.brow_definition_sub),
-                        settings.browDefinition,
-                    ) { custom { copy(browDefinition = it) } }
-                    SettingSlider(
-                        stringResource(R.string.teeth_whitening),
-                        stringResource(R.string.teeth_whitening_sub),
-                        settings.teethWhitening,
-                    ) { custom { copy(teethWhitening = it) } }
+                    SectionLabel(stringResource(R.string.page_under_eyes))
+                    SettingSlider(stringResource(R.string.dark_circle_correction), settings.underEyeStrength, "slider_dark_circles") { custom { copy(underEyeStrength = it) } }
+                    SettingSlider(stringResource(R.string.puffiness_soften), settings.underEyeSmoothing, "slider_puffiness") { custom { copy(underEyeSmoothing = it) } }
+                    SettingSlider(stringResource(R.string.maximum_lift), (settings.underEyeMaximumLift / 0.4f).coerceIn(0f, 1f), "slider_under_eye_lift") { custom { copy(underEyeMaximumLift = it * 0.4f) } }
+                    SettingSlider(stringResource(R.string.blue_purple_neutralization), settings.underEyeColorCorrection, "slider_under_eye_color") { custom { copy(underEyeColorCorrection = it) } }
+                    SectionLabel(stringResource(R.string.page_eyes))
+                    SettingSlider(stringResource(R.string.eye_clarity), settings.eyeClarity / 0.8f, "slider_eye_clarity") { custom { copy(eyeClarity = it * 0.8f) } }
+                    SettingSlider(stringResource(R.string.eye_brightening), settings.eyeBrightening, "slider_eye_bright") { custom { copy(eyeBrightening = it) } }
+                    SettingSlider(stringResource(R.string.eye_sparkle), settings.eyeSparkle, "slider_eye_sparkle") { custom { copy(eyeSparkle = it) } }
+                    SettingSlider(stringResource(R.string.brow_definition), settings.browDefinition, "slider_brows") { custom { copy(browDefinition = it) } }
+                    SettingSlider(stringResource(R.string.teeth_whitening), settings.teethWhitening, "slider_teeth") { custom { copy(teethWhitening = it) } }
                 }
 
                 StudioPage.LIPS -> {
-                    SettingSlider(
-                        stringResource(R.string.lip_enhancement),
-                        stringResource(R.string.lip_enhancement_sub),
-                        settings.lipEnhancement,
-                    ) { custom { copy(lipEnhancement = it) } }
-                    SettingSlider(
-                        stringResource(R.string.lip_tint),
-                        stringResource(R.string.lip_tint_sub),
-                        settings.lipTintStrength,
-                    ) { custom { copy(lipTintStrength = it) } }
-                    SettingSlider(
-                        stringResource(R.string.lip_definition),
-                        stringResource(R.string.lip_definition_sub),
-                        settings.lipDefinition,
-                    ) { custom { copy(lipDefinition = it) } }
-                    SettingSlider(
-                        stringResource(R.string.lip_gloss),
-                        stringResource(R.string.lip_gloss_sub),
-                        settings.lipGloss,
-                    ) { custom { copy(lipGloss = it) } }
+                    SettingSlider(stringResource(R.string.lip_enhancement), settings.lipEnhancement, "slider_lip_enhance") { custom { copy(lipEnhancement = it) } }
+                    SettingSlider(stringResource(R.string.lip_tint), settings.lipTintStrength, "slider_lip_tint") { custom { copy(lipTintStrength = it) } }
+                    SettingSlider(stringResource(R.string.lip_definition), settings.lipDefinition, "slider_lip_definition") { custom { copy(lipDefinition = it) } }
+                    SettingSlider(stringResource(R.string.lip_gloss), settings.lipGloss, "slider_lip_gloss") { custom { copy(lipGloss = it) } }
                 }
 
                 StudioPage.SHAPE -> {
-                    SettingSlider(
-                        stringResource(R.string.face_slimming),
-                        stringResource(R.string.face_slimming_sub),
-                        settings.faceSlimming,
-                    ) { custom { copy(faceSlimming = it) } }
-                    SettingSlider(
-                        stringResource(R.string.eye_enlargement),
-                        stringResource(R.string.eye_enlargement_sub),
-                        settings.eyeEnlargement,
-                    ) { custom { copy(eyeEnlargement = it) } }
-                    SettingSlider(
-                        stringResource(R.string.nose_refinement),
-                        stringResource(R.string.nose_refinement_sub),
-                        settings.noseRefinement,
-                    ) { custom { copy(noseRefinement = it) } }
-                    SettingSlider(
-                        stringResource(R.string.contour),
-                        stringResource(R.string.contour_sub),
-                        settings.contourStrength,
-                    ) { custom { copy(contourStrength = it) } }
-                    SettingSlider(
-                        stringResource(R.string.blush),
-                        stringResource(R.string.blush_sub),
-                        settings.blushStrength,
-                    ) { custom { copy(blushStrength = it) } }
-                    InfoCard(stringResource(R.string.info_shape))
+                    SettingSlider(stringResource(R.string.face_slimming), settings.faceSlimming, "slider_face_slim") { custom { copy(faceSlimming = it) } }
+                    SettingSlider(stringResource(R.string.eye_enlargement), settings.eyeEnlargement, "slider_eye_size") { custom { copy(eyeEnlargement = it) } }
+                    SettingSlider(stringResource(R.string.nose_refinement), settings.noseRefinement, "slider_nose") { custom { copy(noseRefinement = it) } }
+                    SettingSlider(stringResource(R.string.contour), settings.contourStrength, "slider_contour") { custom { copy(contourStrength = it) } }
+                    SettingSlider(stringResource(R.string.blush), settings.blushStrength, "slider_blush") { custom { copy(blushStrength = it) } }
+                }
+
+                StudioPage.SCENE -> {
+                    ReflectionSceneSelector(
+                        selected = settings.reflectionScene,
+                        onSelect = { onChange(settings.copy(reflectionScene = it)) },
+                    )
+                    if (settings.reflectionScene == ReflectionScene.DARK_LAKE) {
+                        SettingSlider(stringResource(R.string.lake_intensity), settings.lakeIntensity, "slider_lake_intensity") { onChange(settings.copy(lakeIntensity = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_motion), settings.lakeMotion, "slider_lake_motion") { onChange(settings.copy(lakeMotion = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_darkness), settings.lakeDarkness, "slider_lake_darkness") { onChange(settings.copy(lakeDarkness = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_face_clarity), settings.lakeFaceClarity, "slider_lake_clarity") { onChange(settings.copy(lakeFaceClarity = it).clamped()) }
+                    }
                 }
 
                 StudioPage.SYSTEM -> {
                     PerformanceCard(
                         selectedQuality = settings.qualityLevel,
                         runtimeQuality = runtimeQuality,
+                        performanceState = performanceState,
                         timing = timing,
-                    )
-                    Text(stringResource(R.string.language), color = BmText, fontSize = 13.sp)
-                    LanguageSelector(
-                        selected = language,
-                        onSelect = { next ->
-                            if (next == language) return@LanguageSelector
-                            LanguagePreferences.set(context, next)
-                            (context as? Activity)?.recreate()
-                        },
                     )
                     ToggleRow(
                         title = stringResource(R.string.mirror_preview),
                         subtitle = stringResource(R.string.mirror_preview_sub),
                         checked = settings.mirrorPreview,
+                        testTag = "toggle_mirror",
                     ) { onChange(settings.copy(mirrorPreview = it)) }
-                    Text(stringResource(R.string.quality_ceiling), color = BmText, fontSize = 13.sp)
-                    QualitySelector(
-                        selected = settings.qualityLevel,
-                        onSelect = { onChange(settings.copy(qualityLevel = it)) },
-                    )
-                    InfoCard(stringResource(R.string.info_quality))
+                    Text(stringResource(R.string.quality_ceiling), color = BmText, fontSize = 12.sp)
+                    QualitySelector(settings.qualityLevel) { onChange(settings.copy(qualityLevel = it)) }
+                    Text(stringResource(R.string.language), color = BmText, fontSize = 12.sp)
+                    LanguageSelector(language) { selected ->
+                        if (selected != language) {
+                            LanguagePreferences.set(context, selected)
+                            (context as? Activity)?.recreate()
+                        }
+                    }
                     if (BuildConfig.DEBUG_OVERLAY_AVAILABLE) {
                         ToggleRow(
                             title = stringResource(R.string.diagnostics),
                             subtitle = stringResource(R.string.diagnostics_sub),
                             checked = settings.debugOverlay,
+                            testTag = "toggle_diagnostics",
                         ) { onChange(settings.copy(debugOverlay = it)) }
                     }
                 }
@@ -525,92 +380,168 @@ fun BeautyControls(
         }
 
         HorizontalDivider(color = BmTextMuted.copy(alpha = 0.13f))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+        TextButton(
+            onClick = {
+                quickFixes.clear()
+                activeFixes = emptySet()
+                onChange(preserveExperience(BeautySettings.natural()))
+            },
+            modifier = Modifier
+                .align(Alignment.Start)
+                .defaultMinSize(minHeight = 44.dp)
+                .testTag("reset_look"),
         ) {
-            TextButton(
-                onClick = {
-                    activeFixes = emptySet()
-                    fixSnapshots.clear()
-                    onChange(preserveSystem(BeautySettings.natural()))
-                },
-            ) {
-                Text(stringResource(R.string.reset_look), color = BmTextMuted)
-            }
+            Text(stringResource(R.string.reset_look), color = BmTextMuted)
+        }
+    }
+}
+
+@Composable
+private fun StudioNavigation(selected: StudioPage, onSelected: (StudioPage) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        StudioPage.entries.forEach { page ->
+            val active = page == selected
             Text(
-                text = stringResource(R.string.private_on_device),
-                color = BmAccent,
-                fontSize = 10.sp,
+                text = stringResource(page.labelRes),
+                color = if (active) BmBg else BmTextMuted,
+                fontSize = 12.sp,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(BmAccent.copy(alpha = 0.10f))
-                    .padding(horizontal = 9.dp, vertical = 6.dp),
+                    .defaultMinSize(minHeight = 40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (active) BmAccent else BmSurfaceStrong)
+                    .semantics {
+                        role = Role.Tab
+                        this.selected = active
+                    }
+                    .clickable { onSelected(page) }
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .testTag("page_${page.name.lowercase()}"),
             )
         }
     }
 }
 
 @Composable
-private fun SmartAction(
+private fun OutcomeCard(
     title: String,
-    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     active: Boolean,
+    modifier: Modifier = Modifier,
+    testTag: String,
     onClick: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .width(172.dp)
-            .clip(RoundedCornerShape(18.dp))
+        modifier = modifier
+            .defaultMinSize(minHeight = 78.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(if (active) BmAccent.copy(alpha = 0.22f) else BmSurfaceStrong)
+            .semantics {
+                role = Role.Switch
+                this.selected = active
+            }
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(horizontal = 11.dp, vertical = 10.dp)
+            .testTag(testTag),
         verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        Text(title, color = if (active) BmAccent else BmText, fontSize = 13.sp)
-        Text(subtitle, color = BmTextMuted, fontSize = 10.sp)
-        Spacer(Modifier.height(3.dp))
+        Icon(icon, contentDescription = null, tint = BmAccent, modifier = Modifier.size(18.dp))
+        Text(title, color = if (active) BmAccent else BmText, fontSize = 12.sp, maxLines = 2)
         Text(
             text = stringResource(if (active) R.string.quick_fix_on else R.string.quick_fix_off),
             color = BmAccent,
-            fontSize = 11.sp,
+            fontSize = 10.sp,
         )
     }
 }
 
 @Composable
+private fun ReflectionSceneSelector(selected: ReflectionScene, onSelect: (ReflectionScene) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        SceneChoice(
+            title = stringResource(R.string.mirror_scene),
+            icon = Icons.Default.Visibility,
+            active = selected == ReflectionScene.MIRROR,
+            modifier = Modifier.weight(1f),
+            testTag = "scene_mirror",
+        ) { onSelect(ReflectionScene.MIRROR) }
+        SceneChoice(
+            title = stringResource(R.string.dark_lake),
+            icon = Icons.Default.WaterDrop,
+            active = selected == ReflectionScene.DARK_LAKE,
+            modifier = Modifier.weight(1f),
+            testTag = "scene_lake",
+        ) { onSelect(ReflectionScene.DARK_LAKE) }
+    }
+}
+
+@Composable
+private fun SceneChoice(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    active: Boolean,
+    modifier: Modifier,
+    testTag: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .defaultMinSize(minHeight = 84.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (active) BmAccent.copy(alpha = 0.20f) else BmSurfaceStrong)
+            .semantics {
+                role = Role.RadioButton
+                selected = active
+                contentDescription = title
+            }
+            .clickable(onClick = onClick)
+            .padding(12.dp)
+            .testTag(testTag),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(32.dp).clip(CircleShape).background(if (active) BmAccent else BmTextMuted.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = if (active) BmBg else BmText, modifier = Modifier.size(18.dp))
+        }
+        Text(title, color = BmText, fontSize = 13.sp)
+    }
+}
+
+
+@Composable
 private fun SettingSlider(
     title: String,
-    subtitle: String,
     value: Float,
+    testTag: String,
     onValue: (Float) -> Unit,
 ) {
     val safe = value.coerceIn(0f, 1f)
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(15.dp))
-            .background(BmSurfaceStrong.copy(alpha = 0.55f))
-            .padding(horizontal = 11.dp, vertical = 8.dp),
+            .clip(RoundedCornerShape(14.dp))
+            .background(BmSurfaceStrong.copy(alpha = 0.72f))
+            .padding(horizontal = 11.dp, vertical = 4.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.fillMaxWidth(0.78f)) {
-                Text(title, color = BmText, fontSize = 12.sp)
-                Text(subtitle, color = BmTextMuted, fontSize = 9.sp)
-            }
-            Text("${(safe * 100).toInt()}%", color = BmAccent, fontSize = 11.sp)
+            Text(title, color = BmText, fontSize = 12.sp)
+            Text("${(safe * 100).toInt()}%", color = BmAccent, fontSize = 10.sp)
         }
         Slider(
             value = safe,
             onValueChange = onValue,
             modifier = Modifier
-                .height(34.dp)
-                .semantics { contentDescription = "$title ${(safe * 100).toInt()} percent" },
+                .height(36.dp)
+                .semantics { contentDescription = "$title ${(safe * 100).toInt()} percent" }
+                .testTag(testTag),
             colors = SliderDefaults.colors(
                 thumbColor = BmAccent,
                 activeTrackColor = BmAccent,
@@ -621,32 +552,37 @@ private fun SettingSlider(
 }
 
 @Composable
-private fun InfoCard(text: String) {
+private fun SectionLabel(text: String) {
     Text(
         text = text,
-        color = BmTextMuted,
+        color = BmAccent,
         fontSize = 10.sp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(BmAccent.copy(alpha = 0.07f))
-            .padding(horizontal = 11.dp, vertical = 9.dp),
+        modifier = Modifier.padding(start = 4.dp, top = 3.dp, bottom = 1.dp),
     )
 }
+
 
 @Composable
 private fun ToggleRow(
     title: String,
     subtitle: String,
     checked: Boolean,
+    testTag: String,
     onChecked: (Boolean) -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(15.dp))
+            .defaultMinSize(minHeight = 58.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(BmSurfaceStrong)
-            .padding(horizontal = 11.dp, vertical = 9.dp),
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                onValueChange = onChecked,
+            )
+            .padding(horizontal = 11.dp, vertical = 8.dp)
+            .testTag(testTag),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -656,11 +592,8 @@ private fun ToggleRow(
         }
         Switch(
             checked = checked,
-            onCheckedChange = onChecked,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = BmBg,
-                checkedTrackColor = BmAccent,
-            ),
+            onCheckedChange = null,
+            colors = SwitchDefaults.colors(checkedThumbColor = BmBg, checkedTrackColor = BmAccent),
         )
     }
 }
@@ -669,32 +602,32 @@ private fun ToggleRow(
 private fun PerformanceCard(
     selectedQuality: QualityLevel,
     runtimeQuality: QualityLevel,
+    performanceState: AdaptivePerformanceState,
     timing: FrameTimingCollector.Snapshot?,
 ) {
     val fps = timing?.cameraFps ?: 0.0
-    val protecting = runtimeQuality != selectedQuality
-    val healthy = fps <= 0.0 || fps >= 29.0
+    val cameraLimited = performanceState.cameraLimited
+    val healthy = fps <= 0.0 || fps >= 29.0 || cameraLimited
+    val protecting = !cameraLimited && (performanceState.protecting || runtimeQuality != selectedQuality)
     val statusColor = when {
+        cameraLimited -> BmTextMuted
         !healthy -> BmDanger
         protecting -> BmAccent
         else -> BmText
     }
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(BmSurfaceStrong)
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(BmSurfaceStrong).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         Text(
             text = when {
+                cameraLimited -> stringResource(R.string.motion_camera_limited)
                 !healthy -> stringResource(R.string.motion_optimizing)
                 protecting -> stringResource(R.string.motion_protecting)
                 else -> stringResource(R.string.motion_stable)
             },
             color = statusColor,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
         )
         Text(
             text = stringResource(
@@ -704,34 +637,42 @@ private fun PerformanceCard(
                 stringResource(selectedQuality.labelRes()),
             ),
             color = BmTextMuted,
-            fontSize = 10.sp,
+            fontSize = 9.sp,
+        )
+        PerformancePressureBar(performanceState.pressure)
+        Text(
+            text = stringResource(R.string.performance_interpolation, (performanceState.pressure * 100).toInt()),
+            color = BmTextMuted,
+            fontSize = 9.sp,
         )
         if (timing != null && timing.gpuFrameMs > 0.0) {
             Text(
-                text = stringResource(
-                    R.string.perf_render_line,
-                    timing.gpuFrameMs,
-                    timing.p95FrameMs,
-                    timing.slowFrameRatio * 100.0,
-                ),
+                text = stringResource(R.string.perf_render_line, timing.gpuFrameMs, timing.p95FrameMs, timing.slowFrameRatio * 100.0),
                 color = BmTextMuted,
-                fontSize = 10.sp,
+                fontSize = 9.sp,
             )
         }
     }
 }
 
 @Composable
-private fun QualitySelector(
-    selected: QualityLevel,
-    onSelect: (QualityLevel) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+private fun PerformancePressureBar(pressure: Float) {
+    Box(
+        modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(BmTextMuted.copy(alpha = 0.14f)),
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(pressure.coerceIn(0f, 1f))
+                .height(6.dp)
+                .clip(CircleShape)
+                .background(if (pressure > 0.72f) BmDanger else BmAccent),
+        )
+    }
+}
+
+@Composable
+private fun QualitySelector(selected: QualityLevel, onSelect: (QualityLevel) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         QualityLevel.userChoices.forEach { level ->
             val active = selected == level
             Text(
@@ -739,41 +680,34 @@ private fun QualitySelector(
                 color = if (active) BmBg else BmTextMuted,
                 fontSize = 11.sp,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
+                    .defaultMinSize(minHeight = 48.dp)
+                    .clip(RoundedCornerShape(13.dp))
                     .background(if (active) BmAccent else BmSurfaceStrong)
                     .clickable { onSelect(level) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                    .padding(horizontal = 14.dp, vertical = 14.dp)
+                    .testTag("quality_${level.name.lowercase()}"),
             )
         }
     }
 }
 
 @Composable
-private fun LanguageSelector(
-    selected: AppLanguage,
-    onSelect: (AppLanguage) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
+private fun LanguageSelector(selected: AppLanguage, onSelect: (AppLanguage) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         AppLanguage.entries.forEach { language ->
             val active = selected == language
-            val label = when (language) {
-                AppLanguage.ENGLISH -> stringResource(R.string.language_english)
-                AppLanguage.FRENCH -> stringResource(R.string.language_french)
-            }
             Text(
-                text = label,
+                text = stringResource(if (language == AppLanguage.ENGLISH) R.string.language_english else R.string.language_french),
                 color = if (active) BmBg else BmTextMuted,
                 fontSize = 11.sp,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
+                    .weight(1f)
+                    .defaultMinSize(minHeight = 48.dp)
+                    .clip(RoundedCornerShape(13.dp))
                     .background(if (active) BmAccent else BmSurfaceStrong)
                     .clickable { onSelect(language) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                    .padding(horizontal = 14.dp, vertical = 14.dp)
+                    .testTag("language_${language.name.lowercase()}"),
             )
         }
     }

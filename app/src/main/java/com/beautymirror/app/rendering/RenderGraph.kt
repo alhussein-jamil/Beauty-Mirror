@@ -11,14 +11,19 @@ import com.beautymirror.app.rendering.passes.FaceLightingPass
 import com.beautymirror.app.rendering.passes.FaceWarpPass
 import com.beautymirror.app.rendering.passes.FeatureEnhancementPass
 import com.beautymirror.app.rendering.passes.FinalCompositePass
+import com.beautymirror.app.rendering.passes.LakeReflectionPass
 import com.beautymirror.app.rendering.passes.SkinSmoothingPass
 import com.beautymirror.app.rendering.passes.UnderEyeCorrectionPass
+import com.beautymirror.app.settings.AdaptivePerformanceState
 import com.beautymirror.app.settings.BeautySettings
+import com.beautymirror.app.settings.ReflectionScene
 import com.beautymirror.app.settings.QualityLevel
 import com.beautymirror.app.settings.SettingsInterpolator
+import com.beautymirror.app.settings.VisitorRevealController
 import com.beautymirror.app.tracking.FaceTrackingResult
 import com.beautymirror.app.util.MathUtils
 import com.beautymirror.app.util.ResourceUtils
+import kotlin.math.pow
 
 /** Multipass, pose-aware beauty graph with ping-pong FBOs. */
 class RenderGraph(context: Context) {
@@ -34,6 +39,7 @@ class RenderGraph(context: Context) {
     val detailPass = DetailRestorationPass(vert, ResourceUtils.loadAssetText(context, "shaders/detail_restoration.frag"))
     val featurePass = FeatureEnhancementPass(vert, ResourceUtils.loadAssetText(context, "shaders/feature_enhancement.frag"))
     val colorPass = ColorCorrectionPass(vert, ResourceUtils.loadAssetText(context, "shaders/color_correction.frag"))
+    val lakePass = LakeReflectionPass(vert, ResourceUtils.loadAssetText(context, "shaders/lake_reflection.frag"))
     val compositePass = FinalCompositePass(vert, ResourceUtils.loadAssetText(context, "shaders/final_composite.frag"))
 
     val maskRenderer = MaskTextureRenderer(
@@ -65,6 +71,8 @@ class RenderGraph(context: Context) {
         }
 
     @Volatile var tracking: FaceTrackingResult = FaceTrackingResult.empty()
+    @Volatile var performanceState: AdaptivePerformanceState = AdaptivePerformanceState.FULL
+    @Volatile var compareHold: Boolean = false
 
     private var maskSizeCached = 0
     private var cameraInputWidth = 1
@@ -74,6 +82,15 @@ class RenderGraph(context: Context) {
     private var masksValid = false
     private var lastMaskTrackingTimestampNs = Long.MIN_VALUE
     private var lastMaskQuality: QualityLevel? = null
+    private var lastMaskRefreshTimestampNs = Long.MIN_VALUE
+    private var lakeMix = 0f
+    private val visitorReveal = VisitorRevealController()
+    private var lastRenderFrameNs = 0L
+    private var lastLakeTrackingTimestampNs = Long.MIN_VALUE
+    private var cachedLakeFaceCenterX = 0.5f
+    private var cachedLakeFaceCenterY = 0.5f
+    private var cachedLakeFaceWidth = 0.38f
+    private var cachedLakeFaceHeight = 0.52f
     private var hadLiveTracking = false
 
     fun setMirrorTransform(
@@ -121,6 +138,7 @@ class RenderGraph(context: Context) {
                 detailPass,
                 featurePass,
                 colorPass,
+                lakePass,
                 compositePass,
             ).forEach { it.resize(w, h) }
             cameraPass.setInputTransform(cameraInputWidth, cameraInputHeight, cameraInputRotationDegrees)
@@ -132,6 +150,7 @@ class RenderGraph(context: Context) {
         if (sizeChanged || maskChanged) {
             masksValid = false
             lastMaskTrackingTimestampNs = Long.MIN_VALUE
+            lastMaskRefreshTimestampNs = Long.MIN_VALUE
             lastMaskQuality = null
         }
     }
@@ -144,14 +163,21 @@ class RenderGraph(context: Context) {
         toScreen: Boolean,
     ): GlTexture {
         val t0 = SystemClock.elapsedRealtimeNanos()
+        val frameDt = if (lastRenderFrameNs == 0L) {
+            1f / 30f
+        } else {
+            ((t0 - lastRenderFrameNs) / 1_000_000_000f).coerceIn(0f, 0.10f)
+        }
+        lastRenderFrameNs = t0
         cameraPass.setTexMatrix(texMatrix)
 
         cameraPass.render(oesTexture, originalFbo, mesh)
         timing.recordPass(cameraPass.name, elapsedMs(t0))
 
         settingsInterpolator.setTarget(settings)
-        val s = settingsInterpolator.tick()
+        val s = settingsInterpolator.tick(frameDt)
         val tr = tracking
+        val perf = performanceState
         if (hadLiveTracking && (!tr.isValid || tr.effectOpacity <= 0.01f)) {
             settingsInterpolator.resetEffectsGate()
             hadLiveTracking = false
@@ -164,9 +190,9 @@ class RenderGraph(context: Context) {
         fun amtRaw(v: Float): Float = MathUtils.effectAmount(v)
 
         // Warp/feature keep opacity as a separate uniform; soft-knee the raw controls only.
-        val faceSlim = amtRaw(s.faceSlimming)
-        val eyeEnlarge = amtRaw(s.eyeEnlargement)
-        val noseRefine = amtRaw(s.noseRefinement)
+        val faceSlim = amtRaw(s.faceSlimming) * perf.optionalScale
+        val eyeEnlarge = amtRaw(s.eyeEnlargement) * perf.optionalScale
+        val noseRefine = amtRaw(s.noseRefinement) * perf.optionalScale
         val skinStrength = amt(s.smoothingStrength)
         val complexion = amt(s.complexionEvenness)
         val redness = amt(s.rednessCorrection)
@@ -180,8 +206,8 @@ class RenderGraph(context: Context) {
         val localContrast = amt(s.localContrast)
         val shine = amt(s.shineControl)
         val skinGlow = amt(s.skinGlow)
-        val eyeClarity = amt(s.eyeClarity)
-        val eyeSparkle = amt(s.eyeSparkle)
+        val eyeClarity = amt(s.eyeClarity) * (0.35f + perf.optionalScale * 0.65f)
+        val eyeSparkle = amt(s.eyeSparkle) * perf.optionalScale
         val eyeBrightening = amtRaw(s.eyeBrightening)
         val browDefinition = amtRaw(s.browDefinition)
         val teethWhitening = amtRaw(s.teethWhitening)
@@ -234,9 +260,13 @@ class RenderGraph(context: Context) {
             // Landmarks normally update at 8–20 Hz while the camera renders at ~30 FPS. Reusing
             // masks until a new tracking result arrives avoids re-drawing and blurring eight mask
             // textures on every camera frame — the largest performance win in the pipeline.
+            val maskIntervalNs = perf.maskRefreshIntervalMs * 1_000_000L
+            val trackingAdvanced = tr.timestampNs != lastMaskTrackingTimestampNs
+            val intervalElapsed = lastMaskRefreshTimestampNs == Long.MIN_VALUE ||
+                tr.timestampNs - lastMaskRefreshTimestampNs >= maskIntervalNs
             val refreshMasks = !masksValid ||
-                tr.timestampNs != lastMaskTrackingTimestampNs ||
-                lastMaskQuality != s.qualityLevel
+                lastMaskQuality != s.qualityLevel ||
+                (trackingAdvanced && intervalElapsed)
             if (refreshMasks) {
                 val polygons = maskGenerator.generate(tr)
                 val faceW = tr.bounds.width.coerceAtLeast(0.15f)
@@ -245,10 +275,11 @@ class RenderGraph(context: Context) {
                     opacity = opacity,
                     faceWidthNorm = faceW,
                     mesh = mesh,
-                    secondBlur = s.qualityLevel.secondMaskBlur,
+                    secondBlur = s.qualityLevel.secondMaskBlur && perf.optionalScale > 0.82f,
                 )
                 masksValid = true
                 lastMaskTrackingTimestampNs = tr.timestampNs
+                lastMaskRefreshTimestampNs = tr.timestampNs
                 lastMaskQuality = s.qualityLevel
             }
             skinPass.skinMask = maskRenderer.skinMask
@@ -288,7 +319,9 @@ class RenderGraph(context: Context) {
         skinPass.complexionEvenness = complexion
         skinPass.rednessCorrection = redness
         skinPass.blemishControl = blemish
-        skinPass.sampleCount = s.qualityLevel.smoothingSamples
+        skinPass.sampleCount = (
+            s.qualityLevel.smoothingSamples * perf.sampleScale
+        ).toInt().coerceIn(2, s.qualityLevel.smoothingSamples)
 
         underEyePass.strength = underEyeStrength
         underEyePass.maxLift = underEyeLift
@@ -330,8 +363,55 @@ class RenderGraph(context: Context) {
 
         colorPass.warmth = warmth
         colorPass.localContrast = 0f
-        compositePass.beforeAfter = if (s.showBeforeAfter) 1f else 0f
+        val comparing = s.showBeforeAfter || compareHold
+        compositePass.beforeAfter = if (comparing) 1f else 0f
         compositePass.dimAmount = settingsInterpolator.dimAmount()
+
+        val lakeTarget = if (s.reflectionScene == ReflectionScene.DARK_LAKE && !comparing) 1f else 0f
+        val lakeAlphaAt30 = if (lakeTarget > lakeMix) 0.10f else 0.14f
+        val lakeAlpha = 1f - (1f - lakeAlphaAt30).pow(frameDt * 30f)
+        lakeMix += (lakeTarget - lakeMix) * lakeAlpha
+        if (kotlin.math.abs(lakeTarget - lakeMix) < 0.002f) lakeMix = lakeTarget
+
+        // Face bounds only change when analysis advances. Do not scan 478 points at camera FPS.
+        if (lakeTarget > 0f && tr.timestampNs != lastLakeTrackingTimestampNs) {
+            val texturePoints = tr.textureLandmarks
+            if (texturePoints.isNotEmpty()) {
+                var minX = 1f
+                var minY = 1f
+                var maxX = 0f
+                var maxY = 0f
+                texturePoints.forEach { point ->
+                    minX = minOf(minX, point.x)
+                    minY = minOf(minY, point.y)
+                    maxX = maxOf(maxX, point.x)
+                    maxY = maxOf(maxY, point.y)
+                }
+                cachedLakeFaceCenterX = (minX + maxX) * 0.5f
+                cachedLakeFaceCenterY = (minY + maxY) * 0.5f
+                cachedLakeFaceWidth = (maxX - minX).coerceIn(0.12f, 0.82f)
+                cachedLakeFaceHeight = (maxY - minY).coerceIn(0.16f, 0.92f)
+            }
+            lastLakeTrackingTimestampNs = tr.timestampNs
+        }
+
+        val reveal = visitorReveal.update(
+            targetPresence = if (lakeTarget > 0f) tr.effectOpacity else 0f,
+            deltaSeconds = frameDt,
+        )
+        lakePass.faceCenterX = cachedLakeFaceCenterX
+        lakePass.faceCenterY = cachedLakeFaceCenterY
+        lakePass.faceWidth = cachedLakeFaceWidth
+        lakePass.faceHeight = cachedLakeFaceHeight
+        lakePass.facePresence = tr.effectOpacity
+        lakePass.visitorReveal = reveal
+        lakePass.timeSeconds = (SystemClock.elapsedRealtime() % 3_600_000L) / 1_000f
+        lakePass.intensity = s.lakeIntensity * lakeMix
+        lakePass.motion = s.lakeMotion
+        lakePass.darkness = s.lakeDarkness
+        lakePass.faceClarity = s.lakeFaceClarity
+        lakePass.quality = perf.sampleScale
+        lakePass.enabled = lakeMix > 0.003f
 
         var read: GlTexture = originalTex
         var writeFbo = pingFbo
@@ -388,6 +468,10 @@ class RenderGraph(context: Context) {
             }
         }
 
+        if (lakePass.enabled) {
+            run(lakePass)
+        }
+
         if (effectsRan) {
             hadLiveTracking = true
             settingsInterpolator.markEffectsApplied()
@@ -429,6 +513,7 @@ class RenderGraph(context: Context) {
         detailPass.release()
         featurePass.release()
         colorPass.release()
+        lakePass.release()
         compositePass.release()
         maskRenderer.release()
         mesh.delete()

@@ -5,7 +5,7 @@ A fully local Android beauty mirror designed for a live exhibition. CameraX feed
 ## Current scope
 
 - True mirrored front-camera presentation with rear-camera switching
-- CameraX preview request targeting 30–60 FPS when supported by the device
+- CameraX preview request targeting a stable 30 FPS when supported by the device
 - OpenGL ES multipass preview with no CPU pixel processing in the preview loop
 - One-face MediaPipe LIVE_STREAM tracking with latest-frame backpressure
 - Landmark masks cached between analysis updates instead of being rebuilt every camera frame
@@ -16,11 +16,14 @@ A fully local Android beauty mirror designed for a live exhibition. CameraX feed
 - Face-local exposure, shadow, highlight, warmth, contrast, contour and blush controls
 - Conservative face slimming, eye enlargement and nose refinement with pose attenuation
 - Quick corrections for Fresh eyes, Even skin, Defined features and Stage ready
-- Face-zone graphics that explain which region each control affects
+- Face-zone graphics plus subtle live region outlines while editing
+- Face-safe Studio docking: controls open opposite the tracked face and remain stable while posing
+- Toggleable dark lake / marsh / well reflection with restrained ripples and a sub-second visitor reveal
 - Off, Natural, Soft, Bright, Stage, Glam and Custom presets
 - Press-and-hold untreated comparison and processed MediaStore photo capture
 - Camera-first Compose UX with a compact top status bar, studio sheet and labeled capture dock
-- HIGH/MEDIUM/LOW plus automatic PERFORMANCE quality with fast demotion and slow recovery
+- HIGH/MEDIUM/LOW plus automatic PERFORMANCE quality with continuous interpolation, fast demotion and slow recovery
+- Camera-limited cadence detection avoids destroying image quality when the sensor—not the renderer—is the bottleneck
 - No accounts, analytics, uploads, runtime model download or network permission
 
 ## Privacy
@@ -54,9 +57,11 @@ The normal workflow is now:
 make doctor   # first time / troubleshooting
 make          # build installable debug APK
 make phone    # build, install and launch on a connected phone
-make demo     # launch mirrored Stage mode with UI hidden (make expo is an alias)
+make demo     # launch mirrored Stage mode in the dark-lake scene with UI hidden
 make fps      # collect 10 seconds of Android frame/jank statistics
 make perf     # launch exhibition mode, then run the FPS check
+make ui-test  # exercise Compose controls on a connected device
+make device-check # full build/lint/UI/FPS device gate
 ```
 
 Generated debug APK:
@@ -138,7 +143,9 @@ Detailed invariants are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 - Front-camera mirroring is resolved against CameraX transformation metadata, then applied exactly once before every beauty effect.
 - GPU masks and saved captures use the same mirrored presentation space as the visible preview.
 - Mask textures are refreshed only when a new tracked face result or runtime quality profile arrives.
-- 30 FPS protection can lower render/mask resolution, sample count and analysis rate; PERFORMANCE also skips optional geometry, detail restoration and feature styling while retaining the core skin, under-eye and lighting correction path.
+- 30 FPS protection first interpolates samples, mask cadence and optional effect strength, then changes resolution only after sustained overload. PERFORMANCE skips optional geometry, detail restoration and feature styling while retaining core skin, under-eye and lighting correction.
+- A low camera cadence with inexpensive rendering is classified as camera-limited instead of triggering destructive quality shedding.
+- The dark-lake pass runs after face correction, preserves a tracked face window, and reduces its optional taps under load.
 - Camera buffers are configured to CameraX's requested resolution before the surface is provided.
 - The camera input pass performs a centered aspect-fill crop using CameraX rotation metadata instead of stretching the image.
 - MediaPipe owns an accepted `ImageProxy` until its asynchronous callback completes.
@@ -149,7 +156,7 @@ Detailed invariants are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Tests
 
-The JVM suite covers coordinate transforms, mask geometry, temporal behavior, settings and preset mapping, the PERFORMANCE quality floor, adaptive 30 FPS hysteresis, capture sizing, and aspect-fill crop calculations.
+The JVM suite covers coordinate transforms, mask geometry, temporal behavior, settings and preset mapping, the PERFORMANCE quality floor, adaptive 30 FPS hysteresis, camera-limited cadence detection, visitor reveal timing, capture sizing, and aspect-fill crop calculations. Compose instrumentation tests exercise every Studio page, scene selection, sliders, presets, one-tap actions, reset and switch semantics.
 
 CI runs static repository checks, unit tests, debug/release lint, debug assembly, unsigned-or-signed release assembly, packaged-asset verification, and merged-manifest privacy verification.
 
@@ -165,6 +172,14 @@ adb logcat | grep -E 'BeautyMirror|BeautyRenderer|FaceLandmarker'
 ```
 
 Check cold launch, permission grant/denial, front/rear switching, all rotations, tracking alignment at frame edges, glasses/facial hair, low light, before/after, repeated captures, background/resume, and sustained thermal behavior.
+
+## Releases (GitHub, not in-app OTA)
+
+This app has **no in-app OTA**: privacy requires no network permission in the APK. Distribution is GitHub Releases only.
+
+- Local publish: copy a PAT into `tools/ota/token.local` (see `token.local.example`), then `make ship-release`
+- Auto publish: push tag `v*` (or run **Release APK** workflow) — CI builds APKs and uploads the GitHub Release
+- `releases/version.json` describes the published channel; APKs are release assets, never baked secrets
 
 ## Known limitations
 

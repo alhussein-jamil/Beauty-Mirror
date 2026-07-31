@@ -19,3 +19,7 @@ out/
 .kotlin/
 releases/*.apk
 !releases/version.json
+
+# Local secrets — never commit
+tools/ota/token.local
+*.local

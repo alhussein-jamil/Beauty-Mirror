@@ -45,6 +45,13 @@ data class BeautySettings(
     val eyeEnlargement: Float = 0.06f,
     val noseRefinement: Float = 0.05f,
 
+    // Exhibition scene. The water pass runs after beautification so corrections remain visible.
+    val reflectionScene: ReflectionScene = ReflectionScene.MIRROR,
+    val lakeIntensity: Float = 0.64f,
+    val lakeMotion: Float = 0.34f,
+    val lakeDarkness: Float = 0.48f,
+    val lakeFaceClarity: Float = 0.72f,
+
     val qualityLevel: QualityLevel = QualityLevel.MEDIUM,
     val showBeforeAfter: Boolean = false,
     val debugOverlay: Boolean = false,
@@ -116,6 +123,10 @@ data class BeautySettings(
         faceSlimming = MathUtils.clamp(faceSlimming, 0f, 1f),
         eyeEnlargement = MathUtils.clamp(eyeEnlargement, 0f, 1f),
         noseRefinement = MathUtils.clamp(noseRefinement, 0f, 1f),
+        lakeIntensity = MathUtils.clamp(lakeIntensity, 0f, 1f),
+        lakeMotion = MathUtils.clamp(lakeMotion, 0f, 1f),
+        lakeDarkness = MathUtils.clamp(lakeDarkness, 0f, 1f),
+        lakeFaceClarity = MathUtils.clamp(lakeFaceClarity, 0f, 1f),
     )
 
     companion object {
@@ -317,6 +328,11 @@ data class BeautySettings(
                 },
                 debugOverlay = current.debugOverlay,
                 mirrorPreview = current.mirrorPreview,
+                reflectionScene = current.reflectionScene,
+                lakeIntensity = current.lakeIntensity,
+                lakeMotion = current.lakeMotion,
+                lakeDarkness = current.lakeDarkness,
+                lakeFaceClarity = current.lakeFaceClarity,
             )
         }
 
@@ -358,6 +374,11 @@ data class BeautySettings(
                 qualityLevel = base.qualityLevel,
                 debugOverlay = base.debugOverlay,
                 mirrorPreview = base.mirrorPreview,
+                reflectionScene = base.reflectionScene,
+                lakeIntensity = base.lakeIntensity,
+                lakeMotion = base.lakeMotion,
+                lakeDarkness = base.lakeDarkness,
+                lakeFaceClarity = base.lakeFaceClarity,
             ).clamped()
         }
     }

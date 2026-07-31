@@ -71,10 +71,18 @@ OES camera + mirror
   -> detail restoration / eye clarity (optional)
   -> feature enhancement (optional)
   -> warmth (optional)
+  -> dark-lake reflection (optional, post-beauty)
   -> final untreated/processed selection
 ```
 
 Expensive passes are bypassed when their effective strength is zero. Detail restoration only runs for preservation after another pass modified the image, while eye clarity may run independently.
+
+
+## Dark-lake exhibition scene
+
+`LakeReflectionPass` runs after all beauty corrections so skin, eye, lip, and under-eye changes remain readable beneath the water treatment. The shader uses restrained horizontal displacement, sparse face-centered arrival ripples, and dark olive/charcoal/brown grading. A soft elliptical clarity window around the tracked face limits displacement and darkness where facial detail matters.
+
+`VisitorRevealController` converts face presence into a frame-rate-independent reveal value: the enhanced reflection reaches approximately 99% within 0.9 seconds and releases more slowly after tracking loss. The reveal is monotonic under stable detection, so intermittent landmark misses do not make the scene pulse. The scene is bypassed for press-and-hold compare but is included in processed captures.
 
 ## Capture
 
@@ -86,7 +94,9 @@ Capture reuses the last camera frame already consumed by the preview loop. It do
 
 ## Adaptive quality
 
-The user-selected quality is a ceiling. Runtime quality can step down or recover with hysteresis based on measured render wall time and analysis starvation. Runtime degradation is not persisted and does not change effect strengths.
+The user-selected quality is a ceiling. `AdaptiveQualityController` first produces a continuous pressure signal from average frame time, nearest-rank p95, slow-frame ratio, camera cadence, and analysis starvation. `RenderGraph` interpolates sample count, optional-effect scale, geometry/detail scale, and mask refresh interval from that pressure before any render-resolution tier changes.
+
+Pressure rises quickly and recovers slowly to avoid visible oscillation. A discrete quality-tier rebind occurs only after sustained stress; recovery requires a longer stable window. When camera FPS is low but renderer average/p95 and slow-frame ratio are comfortable, the controller marks the source as camera-limited instead of unnecessarily stripping visual quality. Runtime adaptation is never persisted and leaves the user's selected strengths unchanged.
 
 ## Privacy and release
 
@@ -105,5 +115,6 @@ Render order:
 
 ```text
 camera/mirror -> face warp -> skin/complexion -> under-eye -> lighting
-              -> detail restoration -> feature enhancement -> color -> composite
+              -> detail restoration -> feature enhancement -> color
+              -> dark-lake reflection -> composite
 ```

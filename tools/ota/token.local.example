@@ -1,0 +1,8 @@
+# Fine-grained GitHub PAT for release tooling (gh upload / private assets).
+# Copy to token.local (gitignored). Never bake into the APK.
+#
+# Beauty Mirror has NO in-app OTA (privacy: no INTERNET permission).
+# This token is only for host-side GitHub Release publish helpers.
+#
+# Suggested scopes: Contents read/write on alhussein-jamil/Beauty-Mirror
+GITHUB_TOKEN_HERE

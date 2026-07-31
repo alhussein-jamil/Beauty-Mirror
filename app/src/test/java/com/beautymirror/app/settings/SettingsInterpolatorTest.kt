@@ -40,4 +40,19 @@ class SettingsInterpolatorTest {
         assertThat(interp.tick().blushStrength).isEqualTo(0.9f)
         assertThat(interp.effectsReady()).isFalse()
     }
+    @Test
+    fun interpolationIsFrameRateIndependent() {
+        fun run(frameRate: Int): Float {
+            val interp = SettingsInterpolator(lerpAlpha = 0.28f)
+            interp.setTarget(BeautySettings.natural().copy(smoothingStrength = 0.1f))
+            interp.markEffectsApplied()
+            interp.setTarget(BeautySettings.natural().copy(smoothingStrength = 0.9f))
+            repeat(frameRate) { interp.tick(1f / frameRate) }
+            return interp.displayed().smoothingStrength
+        }
+
+        assertThat(run(60)).isWithin(0.002f).of(run(30))
+        assertThat(run(24)).isWithin(0.002f).of(run(30))
+    }
+
 }

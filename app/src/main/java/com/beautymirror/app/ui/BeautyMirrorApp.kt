@@ -31,8 +31,10 @@ import com.beautymirror.app.camera.CameraController
 import com.beautymirror.app.camera.ProcessedCaptureController
 import com.beautymirror.app.rendering.BeautyRenderer
 import com.beautymirror.app.rendering.FrameTimingCollector
+import com.beautymirror.app.settings.AdaptivePerformanceState
 import com.beautymirror.app.settings.AdaptiveQualityController
 import com.beautymirror.app.settings.BeautySettings
+import com.beautymirror.app.settings.ReflectionScene
 import com.beautymirror.app.settings.SettingsRepository
 import com.beautymirror.app.tracking.FaceCoordinateMapper
 import com.beautymirror.app.tracking.FaceLandmarkerEngine
@@ -125,6 +127,11 @@ fun BeautyMirrorApp(
                 settings = BeautySettings.stage().copy(
                     debugOverlay = false,
                     mirrorPreview = true,
+                    reflectionScene = ReflectionScene.DARK_LAKE,
+                    lakeIntensity = 0.66f,
+                    lakeMotion = 0.30f,
+                    lakeDarkness = 0.50f,
+                    lakeFaceClarity = 0.78f,
                 )
                 settingsHydrated = true
                 return@LaunchedEffect
@@ -142,6 +149,7 @@ fun BeautyMirrorApp(
         val adaptive = remember { AdaptiveQualityController() }
         // Runtime quality may drop under load; settings.qualityLevel stays the user ceiling.
         var runtimeQuality by remember { mutableStateOf(settings.qualityLevel) }
+        var performanceState by remember { mutableStateOf(AdaptivePerformanceState.FULL) }
 
         // Apply restored settings immediately after renderer startup, not only after the first
         // user interaction. This also makes mirror mode deterministic on every launch.
@@ -151,12 +159,14 @@ fun BeautyMirrorApp(
                 showBeforeAfter = false,
                 qualityLevel = runtimeQuality,
             )
+            renderer.performanceState = performanceState
             cameraController.setMirrorPreview(settings.mirrorPreview)
         }
 
         // Debounced persist — never store transient compare (showBeforeAfter).
-        LaunchedEffect(settings, settingsHydrated) {
-            if (!settingsHydrated) return@LaunchedEffect
+        // Exhibition / demo launches stay ephemeral so they do not overwrite the saved look.
+        LaunchedEffect(settings, settingsHydrated, launchExhibitionMode) {
+            if (!settingsHydrated || launchExhibitionMode) return@LaunchedEffect
             delay(280)
             settingsRepository.save(settings.copy(showBeforeAfter = false))
         }
@@ -213,6 +223,8 @@ fun BeautyMirrorApp(
             if (!pipelineReady) return@LaunchedEffect
             adaptive.setLevel(settings.qualityLevel)
             runtimeQuality = settings.qualityLevel
+            performanceState = adaptive.performanceState()
+            renderer.performanceState = performanceState
             landmarker.setQuality(settings.qualityLevel)
             cameraController.updateQuality(settings.qualityLevel)
         }
@@ -224,6 +236,8 @@ fun BeautyMirrorApp(
                 timing = snap
                 if (snap != null) {
                     val next = adaptive.evaluate(SystemClock.elapsedRealtime(), snap)
+                    performanceState = adaptive.performanceState()
+                    renderer.performanceState = performanceState
                     if (next != null && next != runtimeQuality) {
                         adaptive.applyAdaptive(next)
                         runtimeQuality = next
@@ -250,6 +264,7 @@ fun BeautyMirrorApp(
             tracking = tracking,
             timing = timing,
             runtimeQuality = runtimeQuality,
+            performanceState = performanceState,
             pipelineReady = pipelineReady,
             statusMessage = landmarkerError,
             startWithChromeHidden = launchExhibitionMode,

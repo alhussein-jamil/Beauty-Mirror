@@ -7,6 +7,7 @@ import android.os.Handler
 import android.util.Log
 import android.view.Surface
 import com.beautymirror.app.BuildConfig
+import com.beautymirror.app.settings.AdaptivePerformanceState
 import com.beautymirror.app.settings.BeautySettings
 import com.beautymirror.app.settings.QualityLevel
 import com.beautymirror.app.tracking.FaceTrackingResult
@@ -53,6 +54,21 @@ class BeautyRenderer(
         set(value) {
             field = value
             glHandler.post { graph?.settings = value }
+        }
+
+    /** Hold-to-compare from the dock — kept separate so settings writers cannot clear it. */
+    @Volatile
+    var compareHold: Boolean = false
+        set(value) {
+            field = value
+            glHandler.post { graph?.compareHold = value }
+        }
+
+    @Volatile
+    var performanceState: AdaptivePerformanceState = AdaptivePerformanceState.FULL
+        set(value) {
+            field = value
+            glHandler.post { graph?.performanceState = value }
         }
 
     @Volatile
@@ -102,6 +118,7 @@ class BeautyRenderer(
         egl = mgr
         graph = RenderGraph(context).also {
             it.settings = settings
+            it.performanceState = performanceState
             it.setMirrorTransform(
                 desiredMirror = isFrontCamera && mirrorPreviewEnabled,
                 surfaceContainsCameraTransform = surfaceContainsCameraTransform,
@@ -256,6 +273,7 @@ class BeautyRenderer(
             val out = outputSurface ?: return
             mgr.makeCurrent(out)
             g.settings = settings
+            g.performanceState = performanceState
             g.tracking = tracking
             g.setMirrorTransform(
                 desiredMirror = isFrontCamera && mirrorPreviewEnabled,
@@ -298,6 +316,7 @@ class BeautyRenderer(
         }
         return try {
             g.settings = settings
+            g.performanceState = performanceState
             g.tracking = tracking
             g.setMirrorTransform(
                 desiredMirror = isFrontCamera && mirrorPreviewEnabled,
@@ -354,7 +373,9 @@ class BeautyRenderer(
                 latch.countDown()
             }
         }
-        latch.await(timeoutMs, TimeUnit.MILLISECONDS)
+        if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS) && BuildConfig.DEBUG) {
+            Log.w(TAG, "releaseSync timed out after ${timeoutMs}ms")
+        }
     }
 
     private fun releaseGlResources() {

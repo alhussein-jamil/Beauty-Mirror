@@ -21,7 +21,7 @@ class FrameTimingCollectorTest {
         c.markCameraFrame() // triggers roll
         val snap = c.snapshot()
         assertThat(snap.gpuFrameMs).isWithin(0.01).of(58.0 / 3.0)
-        assertThat(snap.p95FrameMs).isWithin(0.01).of(10.0)
+        assertThat(snap.p95FrameMs).isWithin(0.01).of(40.0)
         assertThat(snap.slowFrameRatio).isWithin(0.01).of(1.0 / 3.0)
         assertThat(snap.passMs).containsKey("skin")
         assertThat(snap.passMs["skin"]!!).isWithin(0.01).of(2.5)

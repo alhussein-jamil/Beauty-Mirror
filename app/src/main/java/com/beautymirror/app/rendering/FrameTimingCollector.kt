@@ -3,6 +3,7 @@ package com.beautymirror.app.rendering
 import android.os.SystemClock
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.ceil
 
 class FrameTimingCollector(
     private val windowMs: Long = 1000L,
@@ -77,7 +78,7 @@ class FrameTimingCollector(
         val p95 = if (frameSampleCount > 0) {
             val sorted = frameSamples.copyOf(frameSampleCount)
             sorted.sort()
-            val index = ((sorted.size - 1) * 0.95).toInt().coerceIn(0, sorted.lastIndex)
+            val index = (ceil(sorted.size * 0.95).toInt() - 1).coerceIn(0, sorted.lastIndex)
             sorted[index]
         } else {
             0.0
