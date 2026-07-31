@@ -526,6 +526,35 @@ fun BeautyControls(
                             testTag = "toggle_diagnostics",
                         ) { onChange(settings.copy(debugOverlay = it)) }
                     }
+                    SectionLabel(stringResource(R.string.about))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("about_section"),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.about_version,
+                                BuildConfig.VERSION_NAME,
+                                BuildConfig.VERSION_CODE,
+                            ),
+                            color = BmText,
+                            fontSize = 13.sp,
+                            modifier = Modifier.testTag("about_version"),
+                        )
+                        Text(
+                            text = stringResource(R.string.about_developed_by),
+                            color = BmTextMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.testTag("about_developed_by"),
+                        )
+                        Text(
+                            text = stringResource(R.string.privacy_statement),
+                            color = BmTextMuted,
+                            fontSize = 11.sp,
+                        )
+                    }
                 }
             }
         }
