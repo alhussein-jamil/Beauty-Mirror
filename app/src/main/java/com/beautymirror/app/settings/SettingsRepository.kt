@@ -66,10 +66,10 @@ class SettingsRepository(private val context: Context) {
         val reflectionScene = runCatching {
             ReflectionScene.valueOf(prefs[reflectionSceneKey] ?: ReflectionScene.MIRROR.name)
         }.getOrDefault(ReflectionScene.MIRROR)
-        val lakeIntensity = prefs[lakeIntensityKey] ?: 0.64f
-        val lakeMotion = prefs[lakeMotionKey] ?: 0.34f
-        val lakeDarkness = prefs[lakeDarknessKey] ?: 0.48f
-        val lakeFaceClarity = prefs[lakeFaceClarityKey] ?: 0.72f
+        val lakeIntensity = prefs[lakeIntensityKey] ?: 0.72f
+        val lakeMotion = prefs[lakeMotionKey] ?: 0.22f
+        val lakeDarkness = prefs[lakeDarknessKey] ?: 0.72f
+        val lakeFaceClarity = prefs[lakeFaceClarityKey] ?: 0.88f
         when (preset) {
             BeautyPreset.CUSTOM -> {
                 val global = prefs[globalKey] ?: 0.45f
@@ -200,6 +200,6 @@ class SettingsRepository(private val context: Context) {
     }
 
     companion object {
-        private const val CURRENT_EFFECTS_SCHEMA = 4
+        private const val CURRENT_EFFECTS_SCHEMA = 5
     }
 }

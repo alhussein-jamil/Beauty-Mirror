@@ -21,6 +21,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
@@ -143,6 +144,18 @@ fun BeautyControls(
         val next = quickFixes.toggle(id, settings, apply)
         activeFixes = quickFixes.activeIds
         onChange(preserveExperience(next).copy(preset = BeautyPreset.CUSTOM).clamped())
+    }
+
+    fun applyLakeMood(intensity: Float, motion: Float, darkness: Float, clarity: Float) {
+        onChange(
+            settings.copy(
+                reflectionScene = ReflectionScene.DARK_LAKE,
+                lakeIntensity = intensity,
+                lakeMotion = motion,
+                lakeDarkness = darkness,
+                lakeFaceClarity = clarity,
+            ).clamped(),
+        )
     }
 
     val panelHeight = (LocalConfiguration.current.screenHeightDp * 0.62f)
@@ -309,6 +322,38 @@ fun BeautyControls(
                         ) {
                             toggleFix("stage_ready") { _ -> BeautySettings.stage() }
                         }
+                        OutcomeCard(
+                            title = stringResource(R.string.action_reflection_plus),
+                            icon = Icons.Default.AutoAwesome,
+                            active = "reflection_plus" in activeFixes,
+                            modifier = Modifier.weight(1f),
+                            testTag = "action_reflection_plus",
+                        ) {
+                            toggleFix("reflection_plus") { s ->
+                                s.copy(
+                                    smoothingStrength = maxOf(s.smoothingStrength, 0.82f),
+                                    complexionEvenness = maxOf(s.complexionEvenness, 0.68f),
+                                    blemishControl = maxOf(s.blemishControl, 0.70f),
+                                    underEyeStrength = maxOf(s.underEyeStrength, 0.82f),
+                                    underEyeSmoothing = maxOf(s.underEyeSmoothing, 0.68f),
+                                    underEyeMaximumLift = maxOf(s.underEyeMaximumLift, 0.25f),
+                                    underEyeColorCorrection = maxOf(s.underEyeColorCorrection, 0.66f),
+                                    eyeClarity = maxOf(s.eyeClarity, 0.56f),
+                                    eyeBrightening = maxOf(s.eyeBrightening, 0.34f),
+                                    eyeSparkle = maxOf(s.eyeSparkle, 0.46f),
+                                    browDefinition = maxOf(s.browDefinition, 0.42f),
+                                    lipEnhancement = maxOf(s.lipEnhancement, 0.60f),
+                                    lipTintStrength = maxOf(s.lipTintStrength, 0.56f),
+                                    lipDefinition = maxOf(s.lipDefinition, 0.60f),
+                                    lipGloss = maxOf(s.lipGloss, 0.38f),
+                                    contourStrength = maxOf(s.contourStrength, 0.46f),
+                                    blushStrength = maxOf(s.blushStrength, 0.28f),
+                                    faceSlimming = maxOf(s.faceSlimming, 0.40f),
+                                    eyeEnlargement = maxOf(s.eyeEnlargement, 0.28f),
+                                    noseRefinement = maxOf(s.noseRefinement, 0.22f),
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -360,10 +405,50 @@ fun BeautyControls(
                         onSelect = { onChange(settings.copy(reflectionScene = it)) },
                     )
                     if (settings.reflectionScene == ReflectionScene.DARK_LAKE) {
+                        Text(stringResource(R.string.scene_moods), color = BmText, fontSize = 12.sp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            SceneMoodCard(
+                                title = stringResource(R.string.scene_mood_still_well),
+                                subtitle = stringResource(R.string.scene_mood_still_well_sub),
+                                modifier = Modifier.weight(1f),
+                                active = settings.lakeDarkness >= 0.76f && settings.lakeMotion <= 0.18f,
+                                testTag = "mood_still_well",
+                            ) { applyLakeMood(0.74f, 0.14f, 0.82f, 0.96f) }
+                            SceneMoodCard(
+                                title = stringResource(R.string.scene_mood_marsh),
+                                subtitle = stringResource(R.string.scene_mood_marsh_sub),
+                                modifier = Modifier.weight(1f),
+                                active = settings.lakeDarkness >= 0.80f && settings.lakeMotion > 0.18f,
+                                testTag = "mood_marsh",
+                            ) { applyLakeMood(0.82f, 0.22f, 0.88f, 0.90f) }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            SceneMoodCard(
+                                title = stringResource(R.string.scene_mood_ripple),
+                                subtitle = stringResource(R.string.scene_mood_ripple_sub),
+                                modifier = Modifier.weight(1f),
+                                active = settings.lakeIntensity <= 0.64f,
+                                testTag = "mood_ripple",
+                            ) { applyLakeMood(0.56f, 0.18f, 0.68f, 0.98f) }
+                            SceneMoodCard(
+                                title = stringResource(R.string.scene_mood_reveal),
+                                subtitle = stringResource(R.string.scene_mood_reveal_sub),
+                                modifier = Modifier.weight(1f),
+                                active = settings.lakeIntensity >= 0.84f && settings.lakeFaceClarity >= 0.94f,
+                                testTag = "mood_reveal",
+                            ) { applyLakeMood(0.88f, 0.20f, 0.80f, 1.00f) }
+                        }
                         SettingSlider(stringResource(R.string.lake_intensity), settings.lakeIntensity, "slider_lake_intensity") { onChange(settings.copy(lakeIntensity = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_motion), settings.lakeMotion, "slider_lake_motion") { onChange(settings.copy(lakeMotion = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_darkness), settings.lakeDarkness, "slider_lake_darkness") { onChange(settings.copy(lakeDarkness = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_face_clarity), settings.lakeFaceClarity, "slider_lake_clarity") { onChange(settings.copy(lakeFaceClarity = it).clamped()) }
+                        Text(stringResource(R.string.lake_scene_hint), color = BmTextMuted, fontSize = 10.sp)
                     }
                 }
 
@@ -522,6 +607,30 @@ private fun ReflectionSceneSelector(selected: ReflectionScene, onSelect: (Reflec
             modifier = Modifier.weight(1f),
             testTag = "scene_lake",
         ) { onSelect(ReflectionScene.DARK_LAKE) }
+    }
+}
+
+@Composable
+private fun SceneMoodCard(
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    active: Boolean,
+    testTag: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .defaultMinSize(minHeight = 84.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (active) BmAccent.copy(alpha = 0.18f) else BmSurfaceStrong)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .testTag(testTag),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(title, color = if (active) BmAccent else BmText, fontSize = 12.sp)
+        Text(subtitle, color = BmTextMuted, fontSize = 10.sp, lineHeight = 12.sp)
     }
 }
 

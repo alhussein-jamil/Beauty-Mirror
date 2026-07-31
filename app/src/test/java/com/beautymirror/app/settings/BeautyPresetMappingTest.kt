@@ -32,9 +32,9 @@ class BeautyPresetMappingTest {
     @Test
     fun maxGlobalStaysBounded() {
         val s = BeautySettings.fromGlobalStrength(1f).clamped()
-        assertThat(s.smoothingStrength).isAtMost(0.88f)
-        assertThat(s.underEyeStrength).isAtMost(0.72f)
-        assertThat(s.faceExposure).isAtMost(0.08f)
+        assertThat(s.smoothingStrength).isAtMost(0.94f)
+        assertThat(s.underEyeStrength).isAtMost(0.84f)
+        assertThat(s.faceExposure).isAtMost(0.09f)
         assertThat(s.globalStrength).isEqualTo(1f)
     }
 

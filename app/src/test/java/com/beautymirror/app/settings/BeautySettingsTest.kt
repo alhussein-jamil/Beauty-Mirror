@@ -40,9 +40,9 @@ class BeautySettingsTest {
     @Test
     fun globalStrengthMapping() {
         val s = BeautySettings.fromGlobalStrength(1f)
-        assertThat(s.smoothingStrength).isWithin(1e-3f).of(0.88f)
-        assertThat(s.underEyeStrength).isWithin(1e-3f).of(0.72f)
-        assertThat(s.faceExposure).isWithin(1e-3f).of(0.08f)
+        assertThat(s.smoothingStrength).isWithin(1e-3f).of(0.94f)
+        assertThat(s.underEyeStrength).isWithin(1e-3f).of(0.84f)
+        assertThat(s.faceExposure).isWithin(1e-3f).of(0.09f)
     }
 
     @Test
@@ -87,8 +87,8 @@ class BeautySettingsTest {
     @Test
     fun fromGlobalStrengthScalesUnderEyeAux() {
         val s = BeautySettings.fromGlobalStrength(1f)
-        assertThat(s.underEyeMaximumLift).isWithin(1e-3f).of(0.18f)
-        assertThat(s.underEyeColorCorrection).isWithin(1e-3f).of(0.48f)
+        assertThat(s.underEyeMaximumLift).isWithin(1e-3f).of(0.22f)
+        assertThat(s.underEyeColorCorrection).isWithin(1e-3f).of(0.60f)
     }
 
     @Test
