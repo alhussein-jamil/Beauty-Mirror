@@ -10,8 +10,8 @@ import com.beautymirror.app.rendering.RenderPass
 /**
  * One-pass Narcissus-pool treatment for exhibition use.
  *
- * Runs after beautification so the face stays a clear looking-glass in dark still water.
- * Motion is low-frequency pond breath plus a soft visitor wavefront — never busy radar ripples.
+ * Runs after beautification so the face stays a clear looking-glass in dark water.
+ * Motion is continuous soft hush + caustic shimmer + visitor crest — alive, never frozen or radar-like.
  * [quality] only gates optional smear taps.
  */
 class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
@@ -43,10 +43,10 @@ class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     var faceHeight: Float = 0.52f
     var facePresence: Float = 0f
     var visitorReveal: Float = 0f
-    var intensity: Float = 0.68f
-    var motion: Float = 0.12f
-    var darkness: Float = 0.78f
-    var faceClarity: Float = 0.94f
+    var intensity: Float = 0.72f
+    var motion: Float = 0.34f
+    var darkness: Float = 0.76f
+    var faceClarity: Float = 0.90f
     var quality: Float = 1f
 
     override fun resize(width: Int, height: Int) {

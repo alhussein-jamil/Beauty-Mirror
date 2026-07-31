@@ -47,10 +47,10 @@ data class BeautySettings(
 
     // Exhibition scene. The water pass runs after beautification so corrections remain visible.
     val reflectionScene: ReflectionScene = ReflectionScene.MIRROR,
-    val lakeIntensity: Float = 0.68f,
-    val lakeMotion: Float = 0.12f,
-    val lakeDarkness: Float = 0.78f,
-    val lakeFaceClarity: Float = 0.94f,
+    val lakeIntensity: Float = 0.72f,
+    val lakeMotion: Float = 0.34f,
+    val lakeDarkness: Float = 0.76f,
+    val lakeFaceClarity: Float = 0.90f,
 
     val qualityLevel: QualityLevel = QualityLevel.MEDIUM,
     val showBeforeAfter: Boolean = false,
