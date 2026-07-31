@@ -42,7 +42,12 @@ class UpdateService(
             @Suppress("DEPRECATION")
             context.packageManager.getPackageInfo(context.packageName, 0)
         }
-        info.longVersionCode.toInt()
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            info.longVersionCode.toInt()
+        } else {
+            @Suppress("DEPRECATION")
+            info.versionCode
+        }
     } catch (_: Exception) {
         BuildConfig.VERSION_CODE
     }
