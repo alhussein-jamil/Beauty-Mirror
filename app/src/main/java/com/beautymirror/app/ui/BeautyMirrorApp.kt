@@ -130,10 +130,10 @@ fun BeautyMirrorApp(
                     debugOverlay = false,
                     mirrorPreview = true,
                     reflectionScene = ReflectionScene.DARK_LAKE,
-                    lakeIntensity = 0.72f,
-                    lakeMotion = 0.34f,
-                    lakeDarkness = 0.76f,
-                    lakeFaceClarity = 0.90f,
+                    lakeIntensity = 0.78f,
+                    lakeMotion = 0.55f,
+                    lakeDarkness = 0.70f,
+                    lakeFaceClarity = 0.88f,
                 )
                 settingsHydrated = true
                 return@LaunchedEffect

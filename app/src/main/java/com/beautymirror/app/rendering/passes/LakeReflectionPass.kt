@@ -8,11 +8,10 @@ import com.beautymirror.app.rendering.GlTexture
 import com.beautymirror.app.rendering.RenderPass
 
 /**
- * One-pass Narcissus-pool treatment for exhibition use.
+ * One-pass dark puddle / Narcissus-pool treatment for exhibition use.
  *
- * Runs after beautification so the face stays a clear looking-glass in dark water.
- * Motion is continuous soft hush + caustic shimmer + visitor crest — alive, never frozen or radar-like.
- * [quality] only gates optional smear taps.
+ * Runs after beautification. Concentric expanding ripples bend UVs and light crests so motion
+ * reads clearly; the face core stays calmer and readable. [quality] only gates smear taps.
  */
 class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     override val name: String = "lake_reflection"
@@ -43,10 +42,10 @@ class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     var faceHeight: Float = 0.52f
     var facePresence: Float = 0f
     var visitorReveal: Float = 0f
-    var intensity: Float = 0.72f
-    var motion: Float = 0.34f
-    var darkness: Float = 0.76f
-    var faceClarity: Float = 0.90f
+    var intensity: Float = 0.78f
+    var motion: Float = 0.55f
+    var darkness: Float = 0.70f
+    var faceClarity: Float = 0.88f
     var quality: Float = 1f
 
     override fun resize(width: Int, height: Int) {

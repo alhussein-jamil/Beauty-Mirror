@@ -24,37 +24,9 @@ float hash12(vec2 p) {
     return fract((p3.x + p3.y) * p3.z);
 }
 
-float valueNoise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    float a = hash12(i);
-    float b = hash12(i + vec2(1.0, 0.0));
-    float c = hash12(i + vec2(0.0, 1.0));
-    float d = hash12(i + vec2(1.0, 1.0));
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-
-float fbm(vec2 p) {
-    float v = 0.0;
-    float amp = 0.55;
-    mat2 m = mat2(0.80, 0.60, -0.60, 0.80);
-    for (int i = 0; i < 4; i++) {
-        v += amp * valueNoise(p);
-        p = m * p * 2.03 + vec2(11.7, 3.1);
-        amp *= 0.48;
-    }
-    return v;
-}
-
 float softEllipse(vec2 uv, vec2 center, vec2 radius) {
     vec2 d = (uv - center) / max(radius, vec2(0.001));
     return exp(-dot(d, d) * 1.55);
-}
-
-float softRing(float dist, float travel, float width) {
-    float d = abs(dist - travel);
-    return exp(-(d * d) / max(width * width, 1e-5));
 }
 
 void main() {
@@ -66,117 +38,109 @@ void main() {
 
     vec2 uv = vTexCoord;
     float aspect = uViewport.x / max(uViewport.y, 1.0);
-    vec2 faceDelta = uv - uFaceCenter;
-    faceDelta.x *= aspect;
 
-    // Slightly tighter portal so a living water collar stays around the face.
-    vec2 faceRadius = max(uFaceSize * vec2(0.72, 0.70), vec2(0.13, 0.17));
-    float faceMask = softEllipse(uv, uFaceCenter, faceRadius * vec2(1.12, 1.10)) * uFacePresence;
-    float faceCore = softEllipse(uv, uFaceCenter, faceRadius * vec2(0.78, 0.76)) * uFacePresence;
-    float faceRim = clamp(faceMask - faceCore * 0.80, 0.0, 1.0);
+    // Aspect-correct vector from face — puddle rings expand in real screen space.
+    vec2 fromFace = uv - uFaceCenter;
+    fromFace.x *= aspect;
+    float r = length(fromFace);
+    vec2 radial = fromFace / max(r, 1e-4);
 
-    vec2 norm = faceDelta / max(vec2(faceRadius.x * aspect, faceRadius.y), vec2(0.001));
-    float dist = length(norm);
+    vec2 faceRadius = max(uFaceSize * vec2(0.70, 0.68), vec2(0.12, 0.16));
+    float faceCore = softEllipse(uv, uFaceCenter, faceRadius * vec2(0.70, 0.68)) * uFacePresence;
+    float faceRim = softEllipse(uv, uFaceCenter, faceRadius * vec2(1.05, 1.02)) * uFacePresence;
+    faceRim = clamp(faceRim - faceCore * 0.75, 0.0, 1.0);
 
-    float reveal = smoothstep(0.02, 0.78, uVisitorReveal);
-    // Motion floor: even low slider keeps pond alive; 0 = nearly glass, 1 = lively hush.
-    float life = mix(0.42, 1.0, uMotion);
-    float portal = faceCore * mix(0.48, 0.82, uFaceClarity) * mix(0.40, 1.0, reveal);
+    float reveal = smoothstep(0.02, 0.75, uVisitorReveal);
+    float motion = clamp(uMotion, 0.0, 1.0);
+    float intensity = clamp(uIntensity, 0.0, 1.0);
+    // Motion=0 still breathes a little; motion=1 is an obvious rain-puddle.
+    float life = mix(0.20, 1.0, motion);
 
-    float breathSpeed = mix(0.18, 0.55, uMotion);
-    float t = uTime * breathSpeed;
-    vec2 windUv = vec2(uv.x * aspect, uv.y) * mix(2.2, 3.8, uMotion);
-    float breath = fbm(windUv + vec2(t * 0.85, -t * 0.48)) * 2.0 - 1.0;
-    float breath2 = fbm(windUv * 1.65 + vec2(-t * 0.36, t * 0.62)) * 2.0 - 1.0;
+    // --- Puddle height field (concentric expanding ripples) ---
+    float freq = mix(22.0, 40.0, motion);
+    float speed = mix(2.8, 8.5, motion);
+    // Slow decay so rings stay readable across most of the frame.
+    float damp = exp(-r * mix(2.4, 1.1, motion));
+    float presenceBoost = mix(0.75, 1.0, uFacePresence);
 
-    float depth = smoothstep(0.12, 1.40, dist);
-    float openWater = smoothstep(0.35, 1.20, dist);
-    float shore = smoothstep(0.65, 1.55, dist);
+    float phase1 = r * freq - uTime * speed;
+    float phase2 = r * freq * 1.65 - uTime * speed * 1.40 + 1.1;
+    float phase3 = r * freq * 0.45 - uTime * speed * 0.55 + 2.3;
+    float h1 = sin(phase1);
+    float h2 = sin(phase2);
+    float h3 = sin(phase3);
+    float height = (h1 * 0.70 + h2 * 0.40 + h3 * 0.25) * damp * presenceBoost * life;
 
-    // Continuous soft concentric hush — always moving, never a hard radar stack.
-    float rippleSpeed = mix(0.70, 1.85, uMotion);
-    float rippleA = sin(dist * 7.5 - uTime * rippleSpeed + breath * 0.35);
-    float rippleB = sin(dist * 13.0 - uTime * rippleSpeed * 1.35 + 1.7) * 0.55;
-    float hushWave = (rippleA * 0.65 + rippleB * 0.35) * exp(-dist * 1.15) * life;
+    // Visitor drop: a stronger expanding crest when someone arrives.
+    float dropR = reveal * mix(0.15, 0.95, fract(uTime * mix(0.12, 0.28, motion)));
+    float drop = exp(-pow((r - dropR) * 14.0, 2.0)) * reveal * life;
+    height += drop * 1.35;
 
-    // Arrival crest rides visitor reveal, then blends into the continuous hush.
-    float arrivalTravel = mix(0.15, 1.45, reveal);
-    float arrivalRing = softRing(dist, arrivalTravel, 0.12) * reveal * 1.2;
-    float rings = (hushWave + arrivalRing * 0.9) * mix(0.55, 1.0, uFacePresence);
+    // Analytical radial slope → refraction direction (classic puddle look).
+    float slope =
+        (freq * cos(phase1) * 0.70 +
+         freq * 1.65 * cos(phase2) * 0.40 +
+         freq * 0.45 * cos(phase3) * 0.25) * damp * presenceBoost * life;
+    slope += -28.0 * (r - dropR) * drop;
 
-    // UV bend strong enough to read on phone (~0.6–1.5% UV on open water).
-    float waterAmp = mix(0.0045, 0.014, uIntensity);
-    waterAmp *= mix(0.55, 1.0, openWater);
-    // Wet-glass on the face: keep some motion so the mirror never freezes solid.
-    waterAmp *= mix(0.28, 1.0, 1.0 - portal * 0.85);
-    waterAmp *= life;
-
-    vec2 drift = vec2(
-        breath * 0.55 + breath2 * 0.25 + rings * 0.85,
-        breath * 0.20 + breath2 * 0.55 + rings * 0.40
-    );
-    drift.y *= 0.62;
-    vec2 sampleUv = clamp(uv + drift * waterAmp, vec2(0.0015), vec2(0.9985));
+    // Face stays calmer; puddle outside / rim gets full kick.
+    float faceCalm = mix(1.0, 0.22, faceCore * mix(0.55, 0.90, uFaceClarity));
+    // Big enough UV bend to see on a phone at mid/max motion (~2–5% UV).
+    float bend = mix(0.012, 0.055, motion) * mix(0.65, 1.0, intensity) * faceCalm;
+    vec2 drift = radial * slope * bend * 0.018;
+    // Slight tangential swirl so crests don't look like pure zoom pulses.
+    vec2 tangent = vec2(-radial.y, radial.x);
+    drift += tangent * height * bend * 0.35;
+    drift.x /= aspect;
+    vec2 sampleUv = clamp(uv + drift, vec2(0.001), vec2(0.999));
 
     vec3 reflected = texture(uInput, sampleUv).rgb;
     if (uQuality > 0.45) {
-        vec2 smear = vec2(waterAmp * 0.55 + 0.0005, waterAmp * 0.22 + 0.00025);
-        vec3 a = texture(uInput, clamp(sampleUv + smear, vec2(0.0015), vec2(0.9985))).rgb;
-        vec3 b = texture(uInput, clamp(sampleUv - smear, vec2(0.0015), vec2(0.9985))).rgb;
-        reflected = mix(reflected, (reflected * 2.0 + a + b) * 0.25, 0.18 + 0.12 * uIntensity * openWater);
+        vec2 smear = radial * (0.0015 + bend * 0.04);
+        smear.x /= aspect;
+        vec3 a = texture(uInput, clamp(sampleUv + smear, vec2(0.001), vec2(0.999))).rgb;
+        vec3 b = texture(uInput, clamp(sampleUv - smear, vec2(0.001), vec2(0.999))).rgb;
+        reflected = mix(reflected, (reflected * 2.0 + a + b) * 0.25, 0.22 * life);
     }
 
+    // Keep lots of warped image in the water so ripples actually read.
     float luma = dot(reflected, LUMA);
-    vec3 abyss = vec3(0.035, 0.045, 0.050);
-    vec3 peat = vec3(0.070, 0.085, 0.065);
-    vec3 moss = vec3(0.095, 0.110, 0.080);
-    vec3 silver = vec3(0.160, 0.170, 0.175);
+    vec3 abyss = vec3(0.04, 0.05, 0.055);
+    vec3 peat = vec3(0.08, 0.10, 0.07);
     float depthGrad = smoothstep(0.05, 0.95, uv.y);
-    vec3 waterBody = mix(abyss, peat, depthGrad * 0.55);
-    waterBody = mix(waterBody, moss, openWater * 0.35);
-    waterBody = mix(waterBody, silver, shore * 0.12);
+    float openWater = smoothstep(0.18, 0.85, r / max(length(faceRadius), 0.2));
+    vec3 waterBody = mix(abyss, peat, depthGrad * 0.5 + openWater * 0.25);
+    float absorb = (0.16 + uDarkness * 0.34) * mix(0.35, 1.0, openWater);
+    absorb *= (1.0 - faceCore * mix(0.55, 0.85, uFaceClarity));
+    vec3 toned = mix(reflected, waterBody + vec3(luma) * vec3(0.22, 0.26, 0.22), absorb);
 
-    float absorb = (0.34 + uDarkness * 0.52) * (0.25 + depth * 0.75);
-    absorb *= (1.0 - portal * 0.88);
-    vec3 toned = mix(reflected, waterBody + vec3(luma) * vec3(0.18, 0.22, 0.20), absorb);
+    // Crest lighting — this is what sells "puddle" even on dark water.
+    float crest = pow(clamp(0.5 + 0.5 * height, 0.0, 1.0), 2.2);
+    float trough = pow(clamp(0.5 - 0.5 * height, 0.0, 1.0), 2.0);
+    toned += vec3(0.70, 0.74, 0.68) * crest * (0.10 + 0.22 * intensity) * life;
+    toned *= 1.0 - trough * (0.08 + 0.10 * uDarkness) * life;
+    // Specular glints on steep slopes.
+    toned += vec3(0.85, 0.88, 0.82) * pow(clamp(abs(slope) * 0.04, 0.0, 1.0), 2.5)
+        * (0.06 + 0.14 * intensity) * life;
 
-    // Color-domain life: drifting caustics + traveling soft crest light (reads even if UV is subtle).
-    float caustic = fbm(windUv * 2.4 + vec2(uTime * 0.22, -uTime * 0.16));
-    float shimmer = pow(clamp(caustic, 0.0, 1.0), 2.6) * (0.035 + 0.070 * uIntensity) * life;
-    shimmer *= mix(0.35, 1.0, openWater + faceRim * 0.65);
-    toned += vec3(0.62, 0.66, 0.58) * shimmer;
+    float grain = hash12(floor(uv * vec2(160.0, 110.0)) + floor(uTime * 8.0)) - 0.5;
+    toned += grain * 0.012 * absorb;
 
-    float crestTravel = fract(uTime * mix(0.10, 0.26, uMotion));
-    float crestLight = softRing(dist, crestTravel * 1.55, 0.09) * exp(-dist * 0.85);
-    toned += vec3(0.48, 0.50, 0.45) * crestLight * (0.045 + 0.06 * uIntensity) * life;
-
-    float meniscus = faceRim * (0.40 + reveal * 0.60);
-    float sheenBand = pow(max(0.0, 1.0 - abs(norm.y) * 1.8), 3.0) * faceMask;
-    // Breathing rim highlight — face edge proves the surface moves.
-    float rimPulse = 0.55 + 0.45 * sin(uTime * mix(0.9, 2.0, uMotion) + breath * 1.2);
-    vec3 sheen = vec3(0.72, 0.74, 0.70) * (meniscus * 0.12 + sheenBand * 0.07) * (0.40 + uIntensity * 0.60);
-    sheen *= rimPulse * life;
-    toned += sheen;
-
-    float grain = hash12(floor(uv * vec2(180.0, 120.0)) + floor(uTime * 6.0)) - 0.5;
-    toned += grain * 0.014 * absorb * life;
-
-    // Readable face with wet-glass refraction — never a frozen sticker.
-    float wetMix = mix(0.22, 0.08, uFaceClarity);
+    // Clear face core with wet refraction that still carries ripples at the rim.
+    float portal = faceCore * mix(0.42, 0.72, uFaceClarity) * mix(0.45, 1.0, reveal);
+    float wetMix = mix(0.45, 0.18, uFaceClarity) * life + 0.08;
     vec3 mirrorFace = mix(base.rgb, reflected, wetMix);
-    mirrorFace = mix(mirrorFace, base.rgb * vec3(1.03, 1.025, 1.01) + vec3(0.01), 0.38 + 0.30 * uFaceClarity);
-    mirrorFace = mix(mirrorFace, mirrorFace * vec3(0.94, 0.97, 1.02), 0.16 * (1.0 - uFaceClarity * 0.5));
-    // Soft rim of live water into the face edge.
-    mirrorFace = mix(mirrorFace, toned, faceRim * 0.18 * life);
+    mirrorFace = mix(mirrorFace, base.rgb * vec3(1.025, 1.02, 1.01) + vec3(0.008), 0.30 + 0.35 * uFaceClarity);
+    mirrorFace = mix(mirrorFace, toned, faceRim * (0.25 + 0.35 * life));
     vec3 color = mix(toned, mirrorFace, portal);
 
-    color += vec3(0.045, 0.040, 0.030) * faceRim * reveal * (0.08 + 0.10 * uIntensity);
+    // Rim meniscus catches crest light.
+    color += vec3(0.55, 0.58, 0.52) * faceRim * crest * 0.12 * life;
 
     vec2 well = uv - vec2(0.5);
     well.x *= aspect;
-    float vignette = smoothstep(0.12, 0.98, dot(well, well) * 1.55);
-    color *= 1.0 - vignette * (0.10 + 0.22 * uDarkness);
-    color *= 1.0 - shore * (0.10 + uDarkness * 0.18) * (0.45 + reveal * 0.55);
+    float vignette = smoothstep(0.14, 1.0, dot(well, well) * 1.45);
+    color *= 1.0 - vignette * (0.08 + 0.18 * uDarkness);
 
     fragColor = vec4(clamp(color, 0.0, 1.0), base.a);
 }
