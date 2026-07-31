@@ -50,7 +50,7 @@ data class BeautySettings(
     val lakeIntensity: Float = 0.78f,
     val lakeMotion: Float = 0.55f,
     val lakeDarkness: Float = 0.70f,
-    val lakeFaceClarity: Float = 0.88f,
+    val lakeFaceClarity: Float = 1f,
 
     val qualityLevel: QualityLevel = QualityLevel.MEDIUM,
     val showBeforeAfter: Boolean = false,

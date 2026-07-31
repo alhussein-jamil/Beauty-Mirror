@@ -133,7 +133,7 @@ fun BeautyMirrorApp(
                     lakeIntensity = 0.78f,
                     lakeMotion = 0.55f,
                     lakeDarkness = 0.70f,
-                    lakeFaceClarity = 0.88f,
+                    lakeFaceClarity = 1f,
                 )
                 settingsHydrated = true
                 return@LaunchedEffect

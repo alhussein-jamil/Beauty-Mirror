@@ -18,6 +18,7 @@ class SettingsRepositoryTest {
         val loaded = repo.settingsFlow.first()
         assertThat(loaded.preset).isEqualTo(BeautyPreset.OFF)
         assertThat(loaded.effectsEnabled).isFalse()
+        assertThat(loaded.lakeFaceClarity).isWithin(1e-3f).of(1f)
     }
 
     @Test

@@ -85,7 +85,7 @@
     <string name="scene_mood_ripple_sub">Livelier surface rings</string>
     <string name="scene_mood_reveal">Reveal++</string>
     <string name="scene_mood_reveal_sub">Arrival crest, then clear reflection</string>
-    <string name="lake_scene_hint">Tip: Still well keeps a living hush around a clear face. Raise Motion for stronger rings; Clarity keeps the mirror readable.</string>
+    <string name="lake_scene_hint">Tip: Keep Face still at max so ripples stay in the water. Raise Ripple motion for stronger rings around you.</string>
 
     <string name="skin_smoothing">Skin smoothing</string>
     <string name="smoothing_radius">Smoothing radius</string>
@@ -141,7 +141,7 @@
     <string name="lake_intensity">Water presence</string>
     <string name="lake_motion">Ripple motion</string>
     <string name="lake_darkness">Water darkness</string>
-    <string name="lake_face_clarity">Face clarity through water</string>
+    <string name="lake_face_clarity">Keep face still</string>
     <string name="performance_interpolation">Adaptive processing pressure: %1$d%%</string>
 
 </resources>

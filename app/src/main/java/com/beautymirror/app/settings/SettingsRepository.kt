@@ -67,11 +67,15 @@ class SettingsRepository(private val context: Context) {
             ReflectionScene.valueOf(prefs[reflectionSceneKey] ?: ReflectionScene.MIRROR.name)
         }.getOrDefault(ReflectionScene.MIRROR)
         val effectsSchema = prefs[effectsSchemaKey] ?: 1
-        // Schema 8: obvious puddle ripples (prior 7 still too subtle on-device).
+        // Schema 8: obvious puddle ripples. Schema 9: face stays still by default (clarity=1).
         val lakeIntensity = if (effectsSchema < 8) 0.78f else (prefs[lakeIntensityKey] ?: 0.78f)
         val lakeMotion = if (effectsSchema < 8) 0.55f else (prefs[lakeMotionKey] ?: 0.55f)
         val lakeDarkness = if (effectsSchema < 8) 0.70f else (prefs[lakeDarknessKey] ?: 0.70f)
-        val lakeFaceClarity = if (effectsSchema < 8) 0.88f else (prefs[lakeFaceClarityKey] ?: 0.88f)
+        val lakeFaceClarity = if (effectsSchema < 9) {
+            1f
+        } else {
+            prefs[lakeFaceClarityKey] ?: 1f
+        }
         when (preset) {
             BeautyPreset.CUSTOM -> {
                 val global = prefs[globalKey] ?: 0.45f
@@ -201,6 +205,6 @@ class SettingsRepository(private val context: Context) {
     }
 
     companion object {
-        private const val CURRENT_EFFECTS_SCHEMA = 8
+        private const val CURRENT_EFFECTS_SCHEMA = 9
     }
 }
