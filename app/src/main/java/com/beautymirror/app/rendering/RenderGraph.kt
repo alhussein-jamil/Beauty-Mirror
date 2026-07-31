@@ -1,0 +1,441 @@
+package com.beautymirror.app.rendering
+
+import android.content.Context
+import android.os.SystemClock
+import com.beautymirror.app.masks.FaceMaskGenerator
+import com.beautymirror.app.masks.MaskTextureRenderer
+import com.beautymirror.app.rendering.passes.CameraInputPass
+import com.beautymirror.app.rendering.passes.ColorCorrectionPass
+import com.beautymirror.app.rendering.passes.DetailRestorationPass
+import com.beautymirror.app.rendering.passes.FaceLightingPass
+import com.beautymirror.app.rendering.passes.FaceWarpPass
+import com.beautymirror.app.rendering.passes.FeatureEnhancementPass
+import com.beautymirror.app.rendering.passes.FinalCompositePass
+import com.beautymirror.app.rendering.passes.SkinSmoothingPass
+import com.beautymirror.app.rendering.passes.UnderEyeCorrectionPass
+import com.beautymirror.app.settings.BeautySettings
+import com.beautymirror.app.settings.QualityLevel
+import com.beautymirror.app.settings.SettingsInterpolator
+import com.beautymirror.app.tracking.FaceTrackingResult
+import com.beautymirror.app.util.MathUtils
+import com.beautymirror.app.util.ResourceUtils
+
+/** Multipass, pose-aware beauty graph with ping-pong FBOs. */
+class RenderGraph(context: Context) {
+    private val vert = ResourceUtils.loadAssetText(context, "shaders/fullscreen.vert")
+    private val maskVert = ResourceUtils.loadAssetText(context, "shaders/mask.vert")
+    private val maskFrag = ResourceUtils.loadAssetText(context, "shaders/mask.frag")
+
+    val cameraPass = CameraInputPass(vert, ResourceUtils.loadAssetText(context, "shaders/camera_oes.frag"))
+    val warpPass = FaceWarpPass(vert, ResourceUtils.loadAssetText(context, "shaders/face_warp.frag"))
+    val skinPass = SkinSmoothingPass(vert, ResourceUtils.loadAssetText(context, "shaders/skin_smoothing.frag"))
+    val underEyePass = UnderEyeCorrectionPass(vert, ResourceUtils.loadAssetText(context, "shaders/under_eye_correction.frag"))
+    val lightingPass = FaceLightingPass(vert, ResourceUtils.loadAssetText(context, "shaders/face_lighting.frag"))
+    val detailPass = DetailRestorationPass(vert, ResourceUtils.loadAssetText(context, "shaders/detail_restoration.frag"))
+    val featurePass = FeatureEnhancementPass(vert, ResourceUtils.loadAssetText(context, "shaders/feature_enhancement.frag"))
+    val colorPass = ColorCorrectionPass(vert, ResourceUtils.loadAssetText(context, "shaders/color_correction.frag"))
+    val compositePass = FinalCompositePass(vert, ResourceUtils.loadAssetText(context, "shaders/final_composite.frag"))
+
+    val maskRenderer = MaskTextureRenderer(
+        maskVert,
+        maskFrag,
+        vert,
+        ResourceUtils.loadAssetText(context, "shaders/mask_blur.frag"),
+    )
+    private val maskGenerator = FaceMaskGenerator()
+    private val settingsInterpolator = SettingsInterpolator()
+
+    private val mesh = GlMesh()
+    private val pingTex = GlTexture()
+    private val pongTex = GlTexture()
+    private val originalTex = GlTexture()
+    private val pingFbo = GlFramebuffer()
+    private val pongFbo = GlFramebuffer()
+    private val originalFbo = GlFramebuffer()
+
+    private var width = 0
+    private var height = 0
+    val timing = FrameTimingCollector()
+
+    /** Latest UI/target settings. Displayed values are smoothed via [settingsInterpolator]. */
+    @Volatile var settings: BeautySettings = BeautySettings.natural()
+        set(value) {
+            field = value
+            settingsInterpolator.setTarget(value)
+        }
+
+    @Volatile var tracking: FaceTrackingResult = FaceTrackingResult.empty()
+
+    private var maskSizeCached = 0
+    private var cameraInputWidth = 1
+    private var cameraInputHeight = 1
+    private var cameraInputRotationDegrees = 0
+    private var lastOutputFbo: GlFramebuffer? = null
+    private var masksValid = false
+    private var lastMaskTrackingTimestampNs = Long.MIN_VALUE
+    private var lastMaskQuality: QualityLevel? = null
+    private var hadLiveTracking = false
+
+    fun setMirrorTransform(
+        desiredMirror: Boolean,
+        surfaceContainsCameraTransform: Boolean,
+        cameraTransformRequestsMirror: Boolean,
+    ) {
+        cameraPass.mirrorX = MirrorTransform.extraFlip(
+            desiredMirror = desiredMirror,
+            surfaceContainsCameraTransform = surfaceContainsCameraTransform,
+            cameraTransformRequestsMirror = cameraTransformRequestsMirror,
+        )
+    }
+
+    fun setCameraInputSize(width: Int, height: Int) {
+        setCameraInputTransform(width, height, cameraInputRotationDegrees)
+    }
+
+    fun setCameraInputTransform(width: Int, height: Int, rotationDegrees: Int) {
+        cameraInputWidth = width.coerceAtLeast(1)
+        cameraInputHeight = height.coerceAtLeast(1)
+        cameraInputRotationDegrees = ((rotationDegrees % 360) + 360) % 360
+        cameraPass.setInputTransform(cameraInputWidth, cameraInputHeight, cameraInputRotationDegrees)
+    }
+
+    fun resize(w: Int, h: Int, maskSize: Int) {
+        val sizeChanged = w != width || h != height
+        val maskChanged = maskSize != maskSizeCached
+        if (!sizeChanged && !maskChanged) return
+        if (sizeChanged) {
+            width = w
+            height = h
+            pingTex.allocate(w, h)
+            pongTex.allocate(w, h)
+            originalTex.allocate(w, h)
+            pingFbo.attach(pingTex)
+            pongFbo.attach(pongTex)
+            originalFbo.attach(originalTex)
+            listOf(
+                cameraPass,
+                warpPass,
+                skinPass,
+                underEyePass,
+                lightingPass,
+                detailPass,
+                featurePass,
+                colorPass,
+                compositePass,
+            ).forEach { it.resize(w, h) }
+            cameraPass.setInputTransform(cameraInputWidth, cameraInputHeight, cameraInputRotationDegrees)
+        }
+        if (maskChanged) {
+            maskSizeCached = maskSize
+            maskRenderer.resize(maskSize, maskSize)
+        }
+        if (sizeChanged || maskChanged) {
+            masksValid = false
+            lastMaskTrackingTimestampNs = Long.MIN_VALUE
+            lastMaskQuality = null
+        }
+    }
+
+    fun renderFrame(
+        oesTexture: GlTexture,
+        texMatrix: FloatArray,
+        outputWidth: Int,
+        outputHeight: Int,
+        toScreen: Boolean,
+    ): GlTexture {
+        val t0 = SystemClock.elapsedRealtimeNanos()
+        cameraPass.setTexMatrix(texMatrix)
+
+        cameraPass.render(oesTexture, originalFbo, mesh)
+        timing.recordPass(cameraPass.name, elapsedMs(t0))
+
+        settingsInterpolator.setTarget(settings)
+        val s = settingsInterpolator.tick()
+        val tr = tracking
+        if (hadLiveTracking && (!tr.isValid || tr.effectOpacity <= 0.01f)) {
+            settingsInterpolator.resetEffectsGate()
+            hadLiveTracking = false
+        }
+        val opacity = tr.effectOpacity
+        val trackingLive = s.effectsEnabled && opacity > 0.01f
+
+        // Soft-knee activation zeros weak controls so entire passes (and masks) can be skipped.
+        fun amt(v: Float): Float = MathUtils.effectAmount(v * opacity)
+        fun amtRaw(v: Float): Float = MathUtils.effectAmount(v)
+
+        // Warp/feature keep opacity as a separate uniform; soft-knee the raw controls only.
+        val faceSlim = amtRaw(s.faceSlimming)
+        val eyeEnlarge = amtRaw(s.eyeEnlargement)
+        val noseRefine = amtRaw(s.noseRefinement)
+        val skinStrength = amt(s.smoothingStrength)
+        val complexion = amt(s.complexionEvenness)
+        val redness = amt(s.rednessCorrection)
+        val blemish = amt(s.blemishControl)
+        val underEyeStrength = amt(s.underEyeStrength)
+        val underEyeSmooth = amt(s.underEyeSmoothing)
+        val underEyeColor = amt(s.underEyeColorCorrection)
+        val underEyeLift = MathUtils.effectAmount((s.underEyeMaximumLift / 0.4f) * opacity) * 0.4f
+        val faceExposure = amt(s.faceExposure)
+        val shadowLift = amt(s.shadowLift)
+        val localContrast = amt(s.localContrast)
+        val shine = amt(s.shineControl)
+        val skinGlow = amt(s.skinGlow)
+        val eyeClarity = amt(s.eyeClarity)
+        val eyeSparkle = amt(s.eyeSparkle)
+        val eyeBrightening = amtRaw(s.eyeBrightening)
+        val browDefinition = amtRaw(s.browDefinition)
+        val teethWhitening = amtRaw(s.teethWhitening)
+        val lipEnhancement = amtRaw(s.lipEnhancement)
+        val lipTint = amtRaw(s.lipTintStrength)
+        val lipDefinition = amtRaw(s.lipDefinition)
+        val lipGloss = amtRaw(s.lipGloss)
+        val blush = amtRaw(s.blushStrength)
+        val contour = amtRaw(s.contourStrength)
+        val warmth = amt(s.warmth)
+
+        val runWarp = s.qualityLevel.geometryEnabled &&
+            (faceSlim > 0f || eyeEnlarge > 0f || noseRefine > 0f)
+        val runSkin = skinStrength > 0f || complexion > 0f || redness > 0f || blemish > 0f
+        val runUnderEye = underEyeStrength > 0f ||
+            underEyeSmooth > 0f ||
+            underEyeColor > 0f ||
+            underEyeLift > 0f
+        val runLighting = kotlin.math.abs(faceExposure) > 0f ||
+            shadowLift > 0f ||
+            localContrast > 0f ||
+            shine > 0f ||
+            skinGlow > 0f
+        val runDetail = s.qualityLevel.detailRestorationEnabled &&
+            (eyeClarity > 0f || eyeSparkle > 0f || s.detailPreservation > 0.001f)
+        val runFeature = s.qualityLevel.featureEnhancementEnabled && (
+            eyeBrightening > 0f ||
+                browDefinition > 0f ||
+                teethWhitening > 0f ||
+                lipEnhancement > 0f ||
+                lipTint > 0f ||
+                lipDefinition > 0f ||
+                lipGloss > 0f ||
+                blush > 0f ||
+                contour > 0f
+            )
+        val runColor = kotlin.math.abs(warmth) > 0f
+        val runAny = trackingLive && (
+            runWarp || runSkin || runUnderEye || runLighting || runDetail || runFeature || runColor
+            )
+
+        val geometry = if (runAny && (runWarp || runFeature || runUnderEye)) {
+            FaceEffectGeometry.from(tr.textureLandmarks, tr.headYaw, tr.headPitch)
+        } else {
+            null
+        }
+
+        val maskStart = SystemClock.elapsedRealtimeNanos()
+        if (runAny) {
+            // Landmarks normally update at 8–20 Hz while the camera renders at ~30 FPS. Reusing
+            // masks until a new tracking result arrives avoids re-drawing and blurring eight mask
+            // textures on every camera frame — the largest performance win in the pipeline.
+            val refreshMasks = !masksValid ||
+                tr.timestampNs != lastMaskTrackingTimestampNs ||
+                lastMaskQuality != s.qualityLevel
+            if (refreshMasks) {
+                val polygons = maskGenerator.generate(tr)
+                val faceW = tr.bounds.width.coerceAtLeast(0.15f)
+                maskRenderer.render(
+                    polygons = polygons,
+                    opacity = opacity,
+                    faceWidthNorm = faceW,
+                    mesh = mesh,
+                    secondBlur = s.qualityLevel.secondMaskBlur,
+                )
+                masksValid = true
+                lastMaskTrackingTimestampNs = tr.timestampNs
+                lastMaskQuality = s.qualityLevel
+            }
+            skinPass.skinMask = maskRenderer.skinMask
+            skinPass.detailMask = maskRenderer.detailMask
+            underEyePass.underEyeMask = maskRenderer.underEyeMask
+            lightingPass.faceMask = maskRenderer.skinMask
+            colorPass.faceMask = maskRenderer.skinMask
+            detailPass.eyeMask = maskRenderer.eyeMask
+            detailPass.detailMask = maskRenderer.detailMask
+            warpPass.faceMask = maskRenderer.faceMask
+            featurePass.eyeMask = maskRenderer.eyeMask
+            featurePass.browMask = maskRenderer.browMask
+            featurePass.lipMask = maskRenderer.lipMask
+            featurePass.mouthMask = maskRenderer.mouthMask
+            featurePass.faceMask = maskRenderer.faceMask
+        } else {
+            masksValid = false
+        }
+        timing.recordPass("masks", elapsedMs(maskStart))
+
+        detailPass.original = originalTex
+        compositePass.original = originalTex
+
+        val faceW = tr.bounds.width.coerceAtLeast(0.15f)
+
+        warpPass.geometry = geometry
+        warpPass.opacity = opacity
+        warpPass.faceSlim = faceSlim
+        warpPass.eyeEnlarge = eyeEnlarge
+        warpPass.noseRefine = noseRefine
+
+        skinPass.strength = skinStrength
+        skinPass.radius = s.smoothingRadius *
+            (faceW / 0.35f).coerceIn(0.65f, 2.25f) *
+            (height.toFloat() / 1080f).coerceIn(0.72f, 1.45f)
+        skinPass.detailRetention = s.detailRetention
+        skinPass.complexionEvenness = complexion
+        skinPass.rednessCorrection = redness
+        skinPass.blemishControl = blemish
+        skinPass.sampleCount = s.qualityLevel.smoothingSamples
+
+        underEyePass.strength = underEyeStrength
+        underEyePass.maxLift = underEyeLift
+        underEyePass.colorCorrection = underEyeColor
+        underEyePass.smoothing = underEyeSmooth
+        underEyePass.leftVisibility = geometry?.leftVisibility ?: 1f
+        underEyePass.rightVisibility = geometry?.rightVisibility ?: 1f
+        underEyePass.poseWeight = geometry?.poseWeight ?: 1f
+        underEyePass.leftCheek = tr.leftCheekColor
+        underEyePass.rightCheek = tr.rightCheekColor
+        underEyePass.leftCheekUv[0] = tr.leftCheekUv.x
+        underEyePass.leftCheekUv[1] = tr.leftCheekUv.y
+        underEyePass.rightCheekUv[0] = tr.rightCheekUv.x
+        underEyePass.rightCheekUv[1] = tr.rightCheekUv.y
+
+        lightingPass.faceExposure = faceExposure
+        lightingPass.shadowLift = shadowLift
+        lightingPass.highlightProtection = s.highlightProtection
+        lightingPass.localContrast = localContrast
+        lightingPass.faceLuma = tr.faceLuminance
+        lightingPass.shineControl = shine
+        lightingPass.skinGlow = skinGlow
+
+        detailPass.eyeClarity = eyeClarity
+        detailPass.eyeSparkle = eyeSparkle
+        detailPass.detailPreservation = s.detailPreservation
+
+        featurePass.geometry = geometry
+        featurePass.opacity = opacity
+        featurePass.eyeBrightening = eyeBrightening
+        featurePass.browDefinition = browDefinition
+        featurePass.teethWhitening = teethWhitening
+        featurePass.lipEnhancement = lipEnhancement
+        featurePass.lipTintStrength = lipTint
+        featurePass.lipDefinition = lipDefinition
+        featurePass.lipGloss = lipGloss
+        featurePass.blush = blush
+        featurePass.contour = contour
+
+        colorPass.warmth = warmth
+        colorPass.localContrast = 0f
+        compositePass.beforeAfter = if (s.showBeforeAfter) 1f else 0f
+        compositePass.dimAmount = settingsInterpolator.dimAmount()
+
+        var read: GlTexture = originalTex
+        var writeFbo = pingFbo
+        var writeTex = pingTex
+
+        fun run(pass: RenderPass) {
+            val start = SystemClock.elapsedRealtimeNanos()
+            pass.render(read, writeFbo, mesh)
+            timing.recordPass(pass.name, elapsedMs(start))
+            read = writeTex
+            if (writeFbo === pingFbo) {
+                writeFbo = pongFbo
+                writeTex = pongTex
+            } else {
+                writeFbo = pingFbo
+                writeTex = pingTex
+            }
+        }
+
+        var effectsRan = false
+        if (runAny) {
+            if (runWarp && geometry != null) {
+                run(warpPass)
+                effectsRan = true
+            }
+            if (runSkin) {
+                run(skinPass)
+                effectsRan = true
+            }
+            if (runUnderEye) {
+                run(underEyePass)
+                effectsRan = true
+            }
+            if (runLighting) {
+                run(lightingPass)
+                effectsRan = true
+            }
+            if (runDetail && (
+                    eyeClarity > 0f ||
+                        eyeSparkle > 0f ||
+                        (read !== originalTex && s.detailPreservation > 0.001f)
+                    )
+            ) {
+                run(detailPass)
+                effectsRan = true
+            }
+            if (runFeature && geometry != null) {
+                run(featurePass)
+                effectsRan = true
+            }
+            if (runColor) {
+                run(colorPass)
+                effectsRan = true
+            }
+        }
+
+        if (effectsRan) {
+            hadLiveTracking = true
+            settingsInterpolator.markEffectsApplied()
+        } else if (!s.effectsEnabled) {
+            // Nothing to wait for when beautify is off — allow lerp for the next enable.
+            settingsInterpolator.markEffectsApplied()
+        }
+
+        if (toScreen) {
+            compositePass.renderToScreen(read, mesh, outputWidth, outputHeight)
+            lastOutputFbo = null
+        } else {
+            compositePass.render(read, writeFbo, mesh)
+            read = writeTex
+            lastOutputFbo = writeFbo
+        }
+
+        timing.recordGpuFrame(elapsedMs(t0))
+        timing.markCameraFrame()
+        return read
+    }
+
+    fun bindLastOutputForRead(): Boolean {
+        val fbo = lastOutputFbo ?: return false
+        fbo.bind()
+        return true
+    }
+
+    fun unbindLastOutput() {
+        lastOutputFbo?.unbind()
+    }
+
+    fun release() {
+        cameraPass.release()
+        warpPass.release()
+        skinPass.release()
+        underEyePass.release()
+        lightingPass.release()
+        detailPass.release()
+        featurePass.release()
+        colorPass.release()
+        compositePass.release()
+        maskRenderer.release()
+        mesh.delete()
+        pingTex.delete(); pongTex.delete(); originalTex.delete()
+        pingFbo.delete(); pongFbo.delete(); originalFbo.delete()
+    }
+
+    private fun elapsedMs(startNs: Long) =
+        (SystemClock.elapsedRealtimeNanos() - startNs) / 1e6
+}

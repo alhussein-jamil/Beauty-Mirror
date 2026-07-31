@@ -1,0 +1,13 @@
+{
+  "name": "beauty-mirror",
+  "version": "2.0.0",
+  "versionCode": 8,
+  "channel": "source",
+  "notes": "Camera-first exhibition UX, face-zone graphics, expanded skin/under-eye/eye/brow/lip controls, cached masks, and average/p95-aware 30 FPS protection with a 480p Performance fallback.",
+  "artifacts": {
+    "debug": "releases/beauty-mirror-debug.apk",
+    "releaseSigned": "releases/beauty-mirror-release.apk",
+    "releaseUnsigned": "releases/beauty-mirror-release-unsigned.apk"
+  },
+  "validation": "See VALIDATION.md; source was statically validated and pure Kotlin components compiled. Full Android Gradle/device validation remains required."
+}

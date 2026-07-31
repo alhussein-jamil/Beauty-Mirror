@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Beauty Mirror</string>
+    <string name="privacy_statement">Tout le traitement caméra se fait localement sur cet appareil.</string>
+    <string name="camera_permission_rationale">L’accès à la caméra est requis pour afficher le miroir.</string>
+    <string name="camera_permission_denied">Permission caméra refusée. Activez-la dans les Réglages pour utiliser Beauty Mirror.</string>
+    <string name="camera_unavailable">Caméra indisponible sur cet appareil.</string>
+    <string name="opengl_unsupported">OpenGL ES 3.0 est requis.</string>
+    <string name="landmarker_missing">Le modèle de suivi du visage est absent des ressources de l’app.</string>
+    <string name="capture_failed">Impossible d’enregistrer la photo.</string>
+    <string name="capture_saved">Photo enregistrée.</string>
+    <string name="storage_permission_needed">Permission de stockage requise pour enregistrer les photos.</string>
+    <string name="switch_camera">Changer de caméra</string>
+    <string name="capture_photo">Prendre une photo</string>
+    <string name="before">Avant</string>
+    <string name="hold_for_before_after">Maintenir pour voir l’aperçu sans retouche</string>
+    <string name="starting_camera">Démarrage de la caméra…</string>
+    <string name="opening_camera">Ouverture de la caméra…</string>
+    <string name="retry">Réessayer</string>
+    <string name="hide_controls">Masquer le panneau</string>
+    <string name="toggle_controls">Afficher ou masquer les réglages beauté</string>
+    <string name="hide_overlay">Masquer tous les contrôles</string>
+    <string name="show_overlay">Afficher les contrôles</string>
+    <string name="local_processing">Privé · traité sur l’appareil</string>
+    <string name="allow_camera">Autoriser la caméra</string>
+    <string name="open_settings">Ouvrir les réglages</string>
+    <string name="flip">Inverser</string>
+    <string name="studio">Studio</string>
+    <string name="compare">Comparer</string>
+    <string name="face_locked">VISAGE VERROUILLÉ · PRIVÉ</string>
+    <string name="finding_face">RECHERCHE DU VISAGE · PRIVÉ</string>
+    <string name="fps_measuring">IPS…</string>
+    <string name="opengl_init_failed">Échec d’initialisation OpenGL</string>
+    <string name="tracking_unavailable">Suivi du visage indisponible ; l’aperçu caméra reste utilisable</string>
+
+    <string name="beauty_studio">Studio Beauté</string>
+    <string name="studio_subtitle">%1$s · retouche faciale en direct</string>
+    <string name="done">Terminé</string>
+    <string name="reset_look">Réinitialiser</string>
+    <string name="private_on_device">PRIVÉ · SUR L’APPAREIL</string>
+    <string name="apply">Appliquer</string>
+    <string name="quick_fix_on">Activé · appuyer pour annuler</string>
+    <string name="quick_fix_off">Désactivé · appuyer pour appliquer</string>
+
+    <string name="page_quick">Rapide</string>
+    <string name="page_skin">Peau</string>
+    <string name="page_under_eyes">Cernes</string>
+    <string name="page_eyes">Yeux</string>
+    <string name="page_lips">Lèvres</string>
+    <string name="page_shape">Forme</string>
+    <string name="page_system">Système</string>
+
+    <string name="guide_quick_title">Choisissez le résultat, pas la technique</string>
+    <string name="guide_quick_desc">Commencez par une correction en un geste, puis affinez seulement l’essentiel.</string>
+    <string name="guide_skin_title">Une peau uniforme sans effacer l’identité</string>
+    <string name="guide_skin_desc">Le lissage évite yeux, sourcils, narines et lèvres.</string>
+    <string name="guide_under_eyes_title">Ombre, couleur et poches traitées séparément</string>
+    <string name="guide_under_eyes_desc">La correction suit chaque œil indépendamment quand la tête tourne.</string>
+    <string name="guide_eyes_title">Clarté, éclat et définition des sourcils</string>
+    <string name="guide_eyes_desc">Les effets restent dans les masques yeux et sourcils pour protéger la peau autour.</string>
+    <string name="guide_lips_title">Chroma naturelle et contour, pas un rouge à lèvres opaque</string>
+    <string name="guide_lips_desc">L’amélioration renforce votre couleur ; la teinte ne fait que réchauffer. Le gloss reste centré.</string>
+    <string name="guide_shape_title">Géométrie discrète selon la pose</string>
+    <string name="guide_shape_desc">Les effets de forme s’atténuent automatiquement aux angles forts et sous charge.</string>
+    <string name="guide_system_title">La protection 30 IPS est toujours active</string>
+    <string name="guide_system_desc">Le détail optionnel est réduit avant que l’aperçu ne saccade.</string>
+
+    <string name="focus_overview">Aperçu du visage entier</string>
+    <string name="focus_eyes">Yeux + sourcils</string>
+    <string name="focus_under_eyes">Cernes + poches</string>
+    <string name="focus_skin">Masque peau seule</string>
+    <string name="focus_lips">Contour des lèvres + gloss</string>
+    <string name="focus_shape">Géométrie selon la pose</string>
+    <string name="focus_system">Protection 30 IPS</string>
+
+    <string name="preset_off">Off</string>
+    <string name="preset_natural">Naturel</string>
+    <string name="preset_soft">Doux</string>
+    <string name="preset_bright">Lumineux</string>
+    <string name="preset_stage">Scène</string>
+    <string name="preset_glam">Glam</string>
+    <string name="preset_custom">Perso</string>
+    <string name="preset_content_desc">Préréglage beauté %1$s</string>
+
+    <string name="quality_low">Basse</string>
+    <string name="quality_medium">Moyenne</string>
+    <string name="quality_high">Haute</string>
+    <string name="quality_performance">Performance</string>
+    <string name="quality_ceiling">Plafond de qualité</string>
+
+    <string name="language">Langue</string>
+    <string name="language_subtitle">Langue de l’interface</string>
+    <string name="language_english">English</string>
+    <string name="language_french">Français</string>
+
+    <string name="overall_intensity">Intensité globale</string>
+    <string name="overall_intensity_sub">Fait évoluer tout le look sur une courbe équilibrée</string>
+    <string name="one_tap_corrections">Corrections en un geste</string>
+    <string name="action_fresh_eyes">Regard frais</string>
+    <string name="action_fresh_eyes_sub">Cernes, couleur et poches</string>
+    <string name="action_clear_blemishes">Atténuer imperfections</string>
+    <string name="action_clear_blemishes_sub">Acné, taches, rougeurs</string>
+    <string name="action_even_skin">Peau uniforme</string>
+    <string name="action_even_skin_sub">Texture, taches, rougeurs et brillance</string>
+    <string name="action_defined_features">Traits définis</string>
+    <string name="action_defined_features_sub">Yeux, sourcils, lèvres et contour</string>
+    <string name="action_stage_ready">Prêt pour la scène</string>
+    <string name="action_stage_ready_sub">Préréglage d’exposition équilibré</string>
+    <string name="info_compare">Maintenez le bouton Comparer en bas pour voir l’image non traitée. La photo enregistrée reprend le même résultat miroir et traité que l’aperçu.</string>
+
+    <string name="skin_smoothing">Lissage de la peau</string>
+    <string name="skin_smoothing_sub">Adoucit la texture fine</string>
+    <string name="smoothing_radius">Rayon de lissage</string>
+    <string name="smoothing_radius_sub">Des valeurs plus grandes ciblent une texture plus large</string>
+    <string name="texture_retention">Conservation de texture</string>
+    <string name="texture_retention_sub">Garde les pores et le détail naturel</string>
+    <string name="complexion_evenness">Uniformité du teint</string>
+    <string name="complexion_evenness_sub">Réduit les taches étendues</string>
+    <string name="acne_blemishes">Acné et imperfections</string>
+    <string name="acne_blemishes_sub">Adoucit les taches isolées sans flouter tout le visage</string>
+    <string name="redness_correction">Correction des rougeurs</string>
+    <string name="redness_correction_sub">Calme les marques rouges et inflammations</string>
+    <string name="shine_control">Contrôle de la brillance</string>
+    <string name="shine_control_sub">Comprime les reflets du front et des joues</string>
+    <string name="skin_glow">Éclat de la peau</string>
+    <string name="skin_glow_sub">Légère radiance des tons moyens</string>
+    <string name="face_light">Lumière du visage</string>
+    <string name="face_light_sub">Exposition locale sans changer l’arrière-plan</string>
+    <string name="shadow_lift">Ouverture des ombres</string>
+    <string name="shadow_lift_sub">Ouvre les ombres du visage</string>
+    <string name="highlight_protection">Protection des hautes lumières</string>
+    <string name="highlight_protection_sub">Protège la peau déjà claire</string>
+    <string name="warmth">Chaleur</string>
+    <string name="warmth_sub">Équilibre froid / chaud du teint</string>
+    <string name="local_contrast">Contraste local</string>
+    <string name="local_contrast_sub">Ajoute de la profondeur après correction</string>
+
+    <string name="dark_circle_correction">Correction des cernes</string>
+    <string name="dark_circle_correction_sub">Aligne chaque côté vers le ton de joue proche</string>
+    <string name="puffiness_soften">Adoucir les poches</string>
+    <string name="puffiness_soften_sub">Lisse la texture locale sans toucher la paupière</string>
+    <string name="maximum_lift">Relevé maximum</string>
+    <string name="maximum_lift_sub">Limite l’éclaircissement de l’ombre</string>
+    <string name="blue_purple_neutralization">Neutralisation bleu / violet</string>
+    <string name="blue_purple_neutralization_sub">Se rapproche de la chrominance de la joue</string>
+    <string name="info_under_eyes">Aux angles de lacet élevés, l’œil caché s’atténue pour que la correction ne peigne jamais sur le nez ou la tempe.</string>
+
+    <string name="eye_clarity">Clarté des yeux</string>
+    <string name="eye_clarity_sub">Restaure le détail de l’iris et des cils</string>
+    <string name="eye_brightening">Éclaircissement des yeux</string>
+    <string name="eye_brightening_sub">Cible les pixels clairs neutres de la sclère</string>
+    <string name="eye_sparkle">Éclat des yeux</string>
+    <string name="eye_sparkle_sub">Ajoute un reflet discret</string>
+    <string name="brow_definition">Définition des sourcils</string>
+    <string name="brow_definition_sub">Renforce les poils existants, pas la peau autour</string>
+    <string name="teeth_whitening">Blanchiment des dents</string>
+    <string name="teeth_whitening_sub">Uniquement les pixels clairs peu saturés de la bouche</string>
+
+    <string name="lip_enhancement">Amélioration des lèvres</string>
+    <string name="lip_enhancement_sub">Rehausse la chroma naturelle</string>
+    <string name="lip_tint">Teinte des lèvres</string>
+    <string name="lip_tint_sub">Réchauffe votre teinte naturelle</string>
+    <string name="lip_definition">Définition des lèvres</string>
+    <string name="lip_definition_sub">Renforce le bord du vermillon</string>
+    <string name="lip_gloss">Gloss</string>
+    <string name="lip_gloss_sub">Reflet central suivi</string>
+
+    <string name="face_slimming">Affinement du visage</string>
+    <string name="face_slimming_sub">Rapproche subtilement le contour de la mâchoire</string>
+    <string name="eye_enlargement">Agrandissement des yeux</string>
+    <string name="eye_enlargement_sub">Petite déformation locale autour de chaque œil</string>
+    <string name="nose_refinement">Raffinement du nez</string>
+    <string name="nose_refinement_sub">Légère réduction autour des ancres du nez</string>
+    <string name="contour">Contour</string>
+    <string name="contour_sub">Ombre douce de mâchoire et lumière centrale du nez</string>
+    <string name="blush">Blush</string>
+    <string name="blush_sub">Teinte des joues selon la pose</string>
+    <string name="info_shape">La géométrie et la restauration de détail sont les premières étapes optionnelles désactivées quand la protection 30 IPS s’active.</string>
+
+    <string name="mirror_preview">Aperçu miroir</string>
+    <string name="mirror_preview_sub">Vos mouvements suivent un miroir physique</string>
+    <string name="info_quality">Haute est un plafond, pas une promesse. L’exécution peut temporairement passer en Moyenne, Basse ou Performance pour préserver le mouvement, puis restaure la qualité après une fenêtre stable.</string>
+    <string name="diagnostics">Diagnostics</string>
+    <string name="diagnostics_sub">Maillage facial, pose, IPS et temps des passes</string>
+
+    <string name="motion_optimizing">Optimisation du mouvement</string>
+    <string name="motion_protecting">Protection 30 IPS active</string>
+    <string name="motion_stable">Mouvement stable</string>
+    <string name="measuring_fps">Mesure des IPS</string>
+    <string name="perf_runtime_line">%1$s · exécution %2$s · plafond %3$s</string>
+    <string name="perf_render_line">rendu %1$.1f ms · p95 %2$.1f ms · lents %3$.0f%%</string>
+</resources>
