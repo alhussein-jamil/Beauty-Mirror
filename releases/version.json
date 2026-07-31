@@ -1,13 +1,9 @@
 {
-  "name": "beauty-mirror",
-  "version": "3.1.0",
-  "versionCode": 10,
-  "channel": "github-release",
-  "notes": "Dark-lake scene, face-safe Studio, FR locale, quick-fix toggles, continuous 30 FPS protection, and GitHub Release distribution (no in-app OTA).",
-  "artifacts": {
-    "debug": "releases/beauty-mirror-debug.apk",
-    "releaseSigned": "releases/beauty-mirror-release.apk",
-    "releaseUnsigned": "releases/beauty-mirror-release-unsigned.apk"
-  },
-  "validation": "See VALIDATION.md. Full Gradle/device validation remains required on the exhibition phone."
+  "version": "3.2.0-debug",
+  "buildNumber": 11,
+  "sha256": "330e9ad64f71fad3a6eb391e2b59a11c2fda5f6f953c73951b06143ec6f81146",
+  "size": 68064508,
+  "apkAssetName": "beauty-mirror-debug.apk",
+  "publishedAt": "2026-07-31T14:53:02+00:00",
+  "channel": "github-release"
 }
