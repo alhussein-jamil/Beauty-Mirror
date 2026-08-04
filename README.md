@@ -18,13 +18,42 @@ A fully local Android beauty mirror designed for a live exhibition. CameraX feed
 - Quick corrections for Fresh eyes, Even skin, Defined features and Stage ready
 - Face-zone graphics plus subtle live region outlines while editing
 - Face-safe Studio docking: controls open opposite the tracked face and remain stable while posing
-- Toggleable dark lake / marsh / well reflection with restrained ripples and a sub-second visitor reveal
+- Toggleable pond / marsh / well reflection matched to the workshop references: murky slate water, mineral specks, broad reflected light and restrained concentric ripples
+- Parameterized 3–30 second visitor transformation (10 seconds by default): face corrections accumulate continuously while the visitor looks
+- Automatic transformation restart after settings are committed, after a visitor leaves and returns, or when tracking directly hands off to a different face
 - Off, Natural, Soft, Bright, Stage, Glam and Custom presets
 - Press-and-hold untreated comparison and processed MediaStore photo capture
 - Camera-first Compose UX with a compact top status bar, studio sheet and labeled capture dock
 - HIGH/MEDIUM/LOW plus automatic PERFORMANCE quality with continuous interpolation, fast demotion and slow recovery
 - Camera-limited cadence detection avoids destroying image quality when the sensor—not the renderer—is the bottleneck
 - No accounts, analytics, uploads, or runtime model download; network only for GitHub OTA
+
+
+## Art-workshop pond mode
+
+The pond is a final presentation layer applied after the full beauty graph. It is intentionally not
+an animated pool filter: the palette is low-saturation grey/green, distortion is clamped, broad
+reflections remain visible, suspended specks stay fixed in pond space, and concentric ripples are
+slow and sparse.
+
+When the editor is closed with **Return to pond**, or the visitor taps outside it, the app:
+
+1. commits the current beauty settings;
+2. switches to the pond scene;
+3. hides application chrome and system bars;
+4. restarts the configured reveal timer;
+5. progressively increases the real face-correction strengths while the reflection settles.
+
+The timer defaults to 10 seconds and is adjustable from 3 to 30 seconds under Studio → Scene.
+A sustained face departure rearms the installation. A direct MediaPipe hand-off to a face at a very
+different position/scale also restarts the sequence without storing or identifying faces.
+
+At runtime, optional pond samples, particles, geometry, feature styling, mask resolution and camera
+resolution are shed in stages whenever the renderer approaches the 33.3 ms frame budget. Core
+skin, under-eye and face-lighting correction remain available in emergency Performance mode.
+
+See [`docs/POND_WORKSHOP_MODE.md`](docs/POND_WORKSHOP_MODE.md) for the complete state machine and
+performance behavior.
 
 ## Privacy
 
@@ -59,7 +88,8 @@ The normal workflow is now:
 make doctor   # first time / troubleshooting
 make          # build installable debug APK
 make phone    # build, install and launch on a connected phone
-make demo     # launch mirrored Stage mode in the dark-lake scene with UI hidden
+make demo     # launch mirrored Stage mode in the pond scene with UI hidden
+make workshop # same exhibition workflow, named for installation use
 make fps      # collect 10 seconds of Android frame/jank statistics
 make perf     # launch exhibition mode, then run the FPS check
 make ui-test  # exercise Compose controls on a connected device
@@ -82,6 +112,7 @@ make devices
 make phone
 make demo
 make expo
+make workshop
 make screenshot
 make fps
 make perf

@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -116,6 +117,7 @@ fun MirrorScreen(
     timing: FrameTimingCollector.Snapshot?,
     runtimeQuality: QualityLevel,
     performanceState: AdaptivePerformanceState,
+    revealProgress: Float = 0f,
     pipelineReady: Boolean = true,
     statusMessage: String? = null,
     startWithChromeHidden: Boolean = false,
@@ -138,10 +140,24 @@ fun MirrorScreen(
     // Lives above BeautyControls so Done (AnimatedVisibility exit) does not wipe one-tap toggles.
     val quickFixSession = remember { QuickFixSession() }
 
+    fun commitPondExperience() {
+        holdingBeforeAfter = false
+        controlsVisible = false
+        lakePanelVisible = false
+        activeFocus = BeautyFocus.OVERVIEW
+        val committed = settings.copy(
+            reflectionScene = ReflectionScene.DARK_LAKE,
+            showBeforeAfter = false,
+        ).clamped()
+        if (committed != settings) onSettingsChange(committed)
+        renderer.restartVisitorReveal()
+        // Done returns directly to the artwork, not to another layer of application chrome.
+        chromeVisible = false
+    }
+
     BackHandler(enabled = controlsVisible || lakePanelVisible || !chromeVisible) {
         when {
-            lakePanelVisible -> lakePanelVisible = false
-            controlsVisible -> controlsVisible = false
+            controlsVisible || lakePanelVisible -> commitPondExperience()
             !chromeVisible -> chromeVisible = true
         }
     }
@@ -288,6 +304,47 @@ fun MirrorScreen(
             topPanelOffset = if (statusMessage != null) 150.dp else 88.dp,
         )
 
+        AnimatedVisibility(
+            visible = settings.reflectionScene == ReflectionScene.DARK_LAKE &&
+                !tracking.isValid &&
+                !chromeVisible &&
+                !controlsVisible &&
+                !lakePanelVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            PondWaitingOverlay(
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(horizontal = 28.dp, vertical = 30.dp),
+            )
+        }
+
+        AnimatedVisibility(
+            visible = settings.reflectionScene == ReflectionScene.DARK_LAKE &&
+                tracking.isValid &&
+                revealProgress in 0.001f..0.995f &&
+                !controlsVisible &&
+                !lakePanelVisible &&
+                !settings.debugOverlay,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            PondRevealOverlay(
+                progress = revealProgress,
+                durationSeconds = settings.revealDurationSeconds,
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(
+                        start = 20.dp,
+                        end = 20.dp,
+                        bottom = if (chromeVisible) 116.dp else 24.dp,
+                    ),
+            )
+        }
+
         // Dismiss layer under chrome controls — tap empty preview closes studio / lake panel.
         if (chromeVisible && (controlsVisible || lakePanelVisible)) {
             Box(
@@ -296,10 +353,7 @@ fun MirrorScreen(
                     .background(Color.Black.copy(alpha = 0.06f))
                     .clickable(
                         onClickLabel = context.getString(R.string.done),
-                        onClick = {
-                            controlsVisible = false
-                            lakePanelVisible = false
-                        },
+                        onClick = { commitPondExperience() },
                     ),
             )
         }
@@ -318,9 +372,7 @@ fun MirrorScreen(
                 reflectionScene = settings.reflectionScene,
                 onSwitchCamera = { scope.launch { cameraController.switchCamera(lifecycleOwner) } },
                 onHide = {
-                    chromeVisible = false
-                    lakePanelVisible = false
-                    controlsVisible = false
+                    if (controlsVisible || lakePanelVisible) commitPondExperience() else chromeVisible = false
                 },
             )
         }
@@ -347,9 +399,7 @@ fun MirrorScreen(
                 performanceState = performanceState,
                 timing = timing,
                 onChange = { onSettingsChange(it.copy(showBeforeAfter = false)) },
-                onDismiss = {
-                    controlsVisible = false
-                },
+                onDismiss = { commitPondExperience() },
                 onFocusChange = { activeFocus = it },
                 otaController = otaController,
                 quickFixSession = quickFixSession,
@@ -378,7 +428,7 @@ fun MirrorScreen(
             LakeAdjustPanel(
                 settings = settings,
                 onChange = { onSettingsChange(it.copy(showBeforeAfter = false)) },
-                onDismiss = { lakePanelVisible = false },
+                onDismiss = { commitPondExperience() },
                 onTurnOff = {
                     lakePanelVisible = false
                     onSettingsChange(settings.copy(reflectionScene = ReflectionScene.MIRROR))
@@ -403,22 +453,11 @@ fun MirrorScreen(
                 holdingBeforeAfter = holdingBeforeAfter,
                 lakeActive = settings.reflectionScene == ReflectionScene.DARK_LAKE,
                 onToggleLake = {
-                    val lakeOn = settings.reflectionScene == ReflectionScene.DARK_LAKE
-                    when {
-                        !lakeOn -> {
-                            controlsVisible = false
-                            onSettingsChange(settings.copy(reflectionScene = ReflectionScene.DARK_LAKE))
-                            lakePanelVisible = true
-                        }
-                        lakePanelVisible -> {
-                            lakePanelVisible = false
-                            onSettingsChange(settings.copy(reflectionScene = ReflectionScene.MIRROR))
-                        }
-                        else -> {
-                            controlsVisible = false
-                            lakePanelVisible = true
-                        }
+                    controlsVisible = false
+                    if (settings.reflectionScene != ReflectionScene.DARK_LAKE) {
+                        onSettingsChange(settings.copy(reflectionScene = ReflectionScene.DARK_LAKE))
                     }
+                    lakePanelVisible = !lakePanelVisible
                 },
                 onToggleControls = {
                     val opening = !controlsVisible
@@ -648,6 +687,96 @@ private fun TopChrome(
 }
 
 @Composable
+private fun PondWaitingOverlay(
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        color = Color(0x8F161B19),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Default.WaterDrop,
+                contentDescription = null,
+                tint = Color(0xFFB8C2B8),
+                modifier = Modifier.size(16.dp),
+            )
+            Column {
+                Text(
+                    stringResource(R.string.pond_waiting_title),
+                    color = BmText,
+                    fontSize = 12.sp,
+                )
+                Text(
+                    stringResource(R.string.pond_waiting_subtitle),
+                    color = BmTextMuted,
+                    fontSize = 9.sp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PondRevealOverlay(
+    progress: Float,
+    durationSeconds: Float,
+    modifier: Modifier = Modifier,
+) {
+    val safe = progress.coerceIn(0f, 1f)
+    val remaining = (durationSeconds * (1f - safe)).coerceAtLeast(0f)
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(22.dp),
+        color = Color(0xA8171C19),
+        shadowElevation = 3.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.padding(end = 12.dp)) {
+                    Text(
+                        stringResource(R.string.pond_keep_looking),
+                        color = BmText,
+                        fontSize = 13.sp,
+                    )
+                    Text(
+                        stringResource(R.string.pond_reveal_remaining, remaining),
+                        color = BmTextMuted,
+                        fontSize = 10.sp,
+                    )
+                }
+                Text(
+                    "${(safe * 100).toInt()}%",
+                    color = BmAccent,
+                    fontSize = 13.sp,
+                )
+            }
+            LinearProgressIndicator(
+                progress = safe,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(CircleShape),
+                color = BmAccent,
+                trackColor = BmTextMuted.copy(alpha = 0.18f),
+            )
+        }
+    }
+}
+
+@Composable
 private fun LakeAdjustPanel(
     settings: BeautySettings,
     onChange: (BeautySettings) -> Unit,
@@ -686,7 +815,7 @@ private fun LakeAdjustPanel(
                         onClick = onDismiss,
                         modifier = Modifier.defaultMinSize(minHeight = 40.dp),
                     ) {
-                        Text(stringResource(R.string.done), color = BmAccent)
+                        Text(stringResource(R.string.return_to_pond), color = BmAccent)
                     }
                 }
             }
@@ -710,6 +839,10 @@ private fun LakeAdjustPanel(
                 value = settings.lakeFaceClarity,
                 testTag = "popup_lake_clarity",
             ) { onChange(settings.copy(lakeFaceClarity = it).clamped()) }
+            LakeDurationSlider(
+                seconds = settings.revealDurationSeconds,
+                onValue = { onChange(settings.copy(revealDurationSeconds = it).clamped()) },
+            )
             Text(
                 stringResource(R.string.lake_scene_hint),
                 color = BmTextMuted,
@@ -742,6 +875,39 @@ private fun LakeSliderRow(
             modifier = Modifier
                 .height(36.dp)
                 .testTag(testTag),
+            colors = SliderDefaults.colors(
+                thumbColor = BmAccent,
+                activeTrackColor = BmAccent,
+                inactiveTrackColor = BmTextMuted.copy(alpha = 0.18f),
+            ),
+        )
+    }
+}
+
+@Composable
+private fun LakeDurationSlider(
+    seconds: Float,
+    onValue: (Float) -> Unit,
+) {
+    val minSeconds = 3f
+    val maxSeconds = 30f
+    val safe = seconds.coerceIn(minSeconds, maxSeconds)
+    val normalized = (safe - minSeconds) / (maxSeconds - minSeconds)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.transformation_duration), color = BmText, fontSize = 12.sp)
+            Text(stringResource(R.string.seconds_value, safe), color = BmAccent, fontSize = 10.sp)
+        }
+        Slider(
+            value = normalized,
+            onValueChange = { onValue(minSeconds + it * (maxSeconds - minSeconds)) },
+            modifier = Modifier
+                .height(36.dp)
+                .testTag("popup_reveal_duration"),
             colors = SliderDefaults.colors(
                 thumbColor = BmAccent,
                 activeTrackColor = BmAccent,

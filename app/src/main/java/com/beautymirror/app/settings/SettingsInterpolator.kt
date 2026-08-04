@@ -139,6 +139,7 @@ class SettingsInterpolator(
                 debugOverlay = from.debugOverlay,
                 mirrorPreview = from.mirrorPreview,
                 reflectionScene = from.reflectionScene,
+                revealDurationSeconds = from.revealDurationSeconds,
             )
 
         fun lerpSettings(from: BeautySettings, to: BeautySettings, t: Float): BeautySettings {

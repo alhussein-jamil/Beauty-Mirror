@@ -24,6 +24,7 @@ class SettingsRepository(private val context: Context) {
     private val lakeMotionKey = floatPreferencesKey("lake_motion")
     private val lakeDarknessKey = floatPreferencesKey("lake_darkness")
     private val lakeFaceClarityKey = floatPreferencesKey("lake_face_clarity")
+    private val revealDurationKey = floatPreferencesKey("reveal_duration_seconds")
     private val smoothKey = floatPreferencesKey("smooth")
     private val smoothRadiusKey = floatPreferencesKey("smooth_radius")
     private val detailRetentionKey = floatPreferencesKey("detail_retention")
@@ -58,23 +59,29 @@ class SettingsRepository(private val context: Context) {
     private val noseKey = floatPreferencesKey("nose_refine")
 
     val settingsFlow: Flow<BeautySettings> = context.dataStore.data.map { prefs ->
-        val preset = runCatching { BeautyPreset.valueOf(prefs[presetKey] ?: BeautyPreset.OFF.name) }
-            .getOrDefault(BeautyPreset.OFF)
+        val preset = runCatching { BeautyPreset.valueOf(prefs[presetKey] ?: BeautyPreset.STAGE.name) }
+            .getOrDefault(BeautyPreset.STAGE)
         val quality = QualityLevel.fromName(prefs[qualityKey] ?: QualityLevel.MEDIUM.name)
         val debug = prefs[debugKey] ?: false
         val mirror = prefs[mirrorKey] ?: true
         val reflectionScene = runCatching {
-            ReflectionScene.valueOf(prefs[reflectionSceneKey] ?: ReflectionScene.MIRROR.name)
-        }.getOrDefault(ReflectionScene.MIRROR)
+            ReflectionScene.valueOf(prefs[reflectionSceneKey] ?: ReflectionScene.DARK_LAKE.name)
+        }.getOrDefault(ReflectionScene.DARK_LAKE)
         val effectsSchema = prefs[effectsSchemaKey] ?: 1
-        // Schema 8: obvious puddle ripples. Schema 9: face stays still by default (clarity=1).
-        val lakeIntensity = if (effectsSchema < 8) 0.78f else (prefs[lakeIntensityKey] ?: 0.78f)
-        val lakeMotion = if (effectsSchema < 8) 0.55f else (prefs[lakeMotionKey] ?: 0.55f)
-        val lakeDarkness = if (effectsSchema < 8) 0.70f else (prefs[lakeDarknessKey] ?: 0.70f)
-        val lakeFaceClarity = if (effectsSchema < 9) {
-            1f
+        // Schema 11 replaces the synthetic puddle treatment with a restrained pond. Rebase old
+        // water parameters once so an upgrade immediately receives the new art-direction defaults.
+        val lakeIntensity = if (effectsSchema < 11) 0.82f else (prefs[lakeIntensityKey] ?: 0.82f)
+        val lakeMotion = if (effectsSchema < 11) 0.34f else (prefs[lakeMotionKey] ?: 0.34f)
+        val lakeDarkness = if (effectsSchema < 11) 0.62f else (prefs[lakeDarknessKey] ?: 0.62f)
+        val lakeFaceClarity = if (effectsSchema < 11) {
+            0.86f
         } else {
-            prefs[lakeFaceClarityKey] ?: 1f
+            prefs[lakeFaceClarityKey] ?: 0.86f
+        }
+        val revealDurationSeconds = if (effectsSchema < 10) {
+            10f
+        } else {
+            prefs[revealDurationKey] ?: 10f
         }
         when (preset) {
             BeautyPreset.CUSTOM -> {
@@ -91,6 +98,7 @@ class SettingsRepository(private val context: Context) {
                         lakeMotion = lakeMotion,
                         lakeDarkness = lakeDarkness,
                         lakeFaceClarity = lakeFaceClarity,
+                        revealDurationSeconds = revealDurationSeconds,
                     ).clamped()
                 } else {
                     BeautySettings(
@@ -136,6 +144,7 @@ class SettingsRepository(private val context: Context) {
                         lakeMotion = lakeMotion,
                         lakeDarkness = lakeDarkness,
                         lakeFaceClarity = lakeFaceClarity,
+                        revealDurationSeconds = revealDurationSeconds,
                     ).clamped()
                 }
             }
@@ -152,6 +161,7 @@ class SettingsRepository(private val context: Context) {
                 lakeMotion = lakeMotion,
                 lakeDarkness = lakeDarkness,
                 lakeFaceClarity = lakeFaceClarity,
+                revealDurationSeconds = revealDurationSeconds,
             )
         }
     }
@@ -169,6 +179,7 @@ class SettingsRepository(private val context: Context) {
             prefs[lakeMotionKey] = settings.lakeMotion
             prefs[lakeDarknessKey] = settings.lakeDarkness
             prefs[lakeFaceClarityKey] = settings.lakeFaceClarity
+            prefs[revealDurationKey] = settings.revealDurationSeconds
             prefs[smoothKey] = settings.smoothingStrength
             prefs[smoothRadiusKey] = settings.smoothingRadius
             prefs[detailRetentionKey] = settings.detailRetention
@@ -205,6 +216,6 @@ class SettingsRepository(private val context: Context) {
     }
 
     companion object {
-        private const val CURRENT_EFFECTS_SCHEMA = 9
+        private const val CURRENT_EFFECTS_SCHEMA = 11
     }
 }

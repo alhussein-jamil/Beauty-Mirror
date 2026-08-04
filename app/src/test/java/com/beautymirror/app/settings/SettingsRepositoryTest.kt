@@ -13,12 +13,17 @@ import org.robolectric.annotation.Config
 @Config(sdk = [28])
 class SettingsRepositoryTest {
     @Test
-    fun emptyStoreDefaultsToOff() = runTest {
+    fun emptyStoreDefaultsToWorkshopStage() = runTest {
         val repo = SettingsRepository(RuntimeEnvironment.getApplication())
         val loaded = repo.settingsFlow.first()
-        assertThat(loaded.preset).isEqualTo(BeautyPreset.OFF)
-        assertThat(loaded.effectsEnabled).isFalse()
-        assertThat(loaded.lakeFaceClarity).isWithin(1e-3f).of(1f)
+        assertThat(loaded.preset).isEqualTo(BeautyPreset.STAGE)
+        assertThat(loaded.effectsEnabled).isTrue()
+        assertThat(loaded.reflectionScene).isEqualTo(ReflectionScene.DARK_LAKE)
+        assertThat(loaded.lakeIntensity).isWithin(1e-3f).of(0.82f)
+        assertThat(loaded.lakeMotion).isWithin(1e-3f).of(0.34f)
+        assertThat(loaded.lakeDarkness).isWithin(1e-3f).of(0.62f)
+        assertThat(loaded.lakeFaceClarity).isWithin(1e-3f).of(0.86f)
+        assertThat(loaded.revealDurationSeconds).isWithin(1e-3f).of(10f)
     }
 
     @Test
@@ -49,6 +54,7 @@ class SettingsRepositoryTest {
             lakeMotion = 0.27f,
             lakeDarkness = 0.59f,
             lakeFaceClarity = 0.83f,
+            revealDurationSeconds = 14f,
         ).clamped()
         repo.save(custom)
         val loaded = repo.settingsFlow.first()
@@ -71,5 +77,6 @@ class SettingsRepositoryTest {
         assertThat(loaded.lakeMotion).isWithin(1e-3f).of(0.27f)
         assertThat(loaded.lakeDarkness).isWithin(1e-3f).of(0.59f)
         assertThat(loaded.lakeFaceClarity).isWithin(1e-3f).of(0.83f)
+        assertThat(loaded.revealDurationSeconds).isWithin(1e-3f).of(14f)
     }
 }

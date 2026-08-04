@@ -14,6 +14,7 @@ class BeautySettingsTest {
             lakeMotion = -1f,
             lakeDarkness = 3f,
             lakeFaceClarity = -2f,
+            revealDurationSeconds = 99f,
         ).clamped()
         assertThat(s.globalStrength).isEqualTo(1f)
         assertThat(s.underEyeMaximumLift).isEqualTo(0.4f)
@@ -22,6 +23,7 @@ class BeautySettingsTest {
         assertThat(s.lakeMotion).isEqualTo(0f)
         assertThat(s.lakeDarkness).isEqualTo(1f)
         assertThat(s.lakeFaceClarity).isEqualTo(0f)
+        assertThat(s.revealDurationSeconds).isEqualTo(30f)
     }
 
     @Test
@@ -99,6 +101,7 @@ class BeautySettingsTest {
             lakeMotion = 0.21f,
             lakeDarkness = 0.64f,
             lakeFaceClarity = 0.84f,
+            revealDurationSeconds = 12f,
         )
         val stage = BeautySettings.fromPreset(BeautyPreset.STAGE, current)
         assertThat(stage.reflectionScene).isEqualTo(ReflectionScene.DARK_LAKE)
@@ -106,6 +109,7 @@ class BeautySettingsTest {
         assertThat(stage.lakeMotion).isWithin(1e-4f).of(0.21f)
         assertThat(stage.lakeDarkness).isWithin(1e-4f).of(0.64f)
         assertThat(stage.lakeFaceClarity).isWithin(1e-4f).of(0.84f)
+        assertThat(stage.revealDurationSeconds).isWithin(1e-4f).of(12f)
     }
 
 }

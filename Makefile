@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := apk
 .PHONY: help setup doctor static test lint apk debug quick release all fresh rebuild clean distclean \
-        devices phone deploy run demo expo exhibit lake install reinstall launch restart stop logs log screenshot fps perf clear-data uninstall where verify check ui-test device-check build-apk release-apk \
+        devices phone deploy run demo expo exhibit lake workshop install reinstall launch restart stop logs log screenshot fps perf clear-data uninstall where verify check ui-test device-check build-apk release-apk \
         ship-release
 
 GRADLE := ./tools/gradle-run.sh --no-daemon
@@ -16,7 +16,8 @@ help:
 	  '' \
 	  '  make                 Build the installable debug APK' \
 	  '  make phone           Build, install and launch on a connected phone' \
-	  '  make demo / expo     Launch Stage mode in the dark-lake exhibition scene' \
+	  '  make demo / expo     Launch Stage mode in the pond exhibition scene' \
+	  '  make workshop       Build/install the art-workshop pond experience' \
 	  '  make ui-test         Run Compose interaction tests on the connected phone' \
 	  '  make device-check    Build, test every UI control, launch and sample FPS' \
 	  '  make release         Build/copy the optimized release APK' \
@@ -92,7 +93,7 @@ build-apk: all
 release-apk: release
 
 # Exhibition shortcut: Stage preset, true mirror, controls/system bars initially hidden.
-demo expo exhibit lake: install
+demo expo exhibit lake workshop: install
 	-$(ADB) shell am force-stop "$(DEBUG_PACKAGE)"
 	$(ADB) shell am start -n "$(COMPONENT)" \
 	  --ez com.beautymirror.app.EXHIBITION_MODE true

@@ -43,6 +43,8 @@ ASSETS=(
 TITLE="Beauty Mirror ${VERSION_NAME}"
 if [[ -n "$NOTES_FILE" && -f "$NOTES_FILE" ]]; then
   NOTES_ARGS=(--notes-file "$NOTES_FILE")
+elif [[ -f RELEASE_NOTES_4.0.0.md ]]; then
+  NOTES_ARGS=(--notes-file RELEASE_NOTES_4.0.0.md)
 elif [[ -f RELEASE_NOTES_3.1.0.md ]]; then
   NOTES_ARGS=(--notes-file RELEASE_NOTES_3.1.0.md)
 else

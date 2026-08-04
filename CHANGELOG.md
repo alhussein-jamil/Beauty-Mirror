@@ -1,5 +1,19 @@
 # Changelog
 
+## 4.0.0
+
+- Replaced the synthetic lake treatment with a workshop-directed pond: murky slate/peat water,
+  stable mineral specks, broad reflected light, clamped refraction and restrained concentric waves.
+- Added a parameterized 3–30 second transformation (10 seconds by default) that scales the actual
+  beauty graph while the visitor continues looking.
+- Restarted the transformation after editor dismissal, sustained face departure/re-entry and
+  direct one-face tracker hand-off without biometric identification.
+- Added exhibition waiting/reveal presentation and a dedicated pond preview/duration UI.
+- Reduced pond shader work automatically in Low/Performance conditions and delayed expensive
+  geometry/feature passes until their reveal contribution is visible.
+- Added `make workshop`, workshop documentation, migration to the new pond defaults and regression
+  coverage for reveal timing and visitor-session detection.
+
 ## 3.1.0
 
 - Added a production dark-lake/marsh/well reflection scene after face beautification.

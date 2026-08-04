@@ -130,10 +130,11 @@ fun BeautyMirrorApp(
                     debugOverlay = false,
                     mirrorPreview = true,
                     reflectionScene = ReflectionScene.DARK_LAKE,
-                    lakeIntensity = 0.78f,
-                    lakeMotion = 0.55f,
-                    lakeDarkness = 0.70f,
-                    lakeFaceClarity = 1f,
+                    lakeIntensity = 0.82f,
+                    lakeMotion = 0.34f,
+                    lakeDarkness = 0.62f,
+                    lakeFaceClarity = 0.86f,
+                    revealDurationSeconds = 10f,
                 )
                 settingsHydrated = true
                 return@LaunchedEffect
@@ -152,6 +153,7 @@ fun BeautyMirrorApp(
         // Runtime quality may drop under load; settings.qualityLevel stays the user ceiling.
         var runtimeQuality by remember { mutableStateOf(settings.qualityLevel) }
         var performanceState by remember { mutableStateOf(AdaptivePerformanceState.FULL) }
+        var revealProgress by remember { mutableStateOf(0f) }
 
         // Apply restored settings immediately after renderer startup, not only after the first
         // user interaction. This also makes mirror mode deterministic on every launch.
@@ -233,9 +235,10 @@ fun BeautyMirrorApp(
 
         LaunchedEffect(Unit) {
             while (true) {
-                delay(500)
+                delay(250)
                 val snap = renderer.timingSnapshot()
                 timing = snap
+                revealProgress = renderer.visitorRevealProgress()
                 if (snap != null) {
                     val next = adaptive.evaluate(SystemClock.elapsedRealtime(), snap)
                     performanceState = adaptive.performanceState()
@@ -272,6 +275,7 @@ fun BeautyMirrorApp(
             timing = timing,
             runtimeQuality = runtimeQuality,
             performanceState = performanceState,
+            revealProgress = revealProgress,
             pipelineReady = pipelineReady,
             statusMessage = landmarkerError,
             startWithChromeHidden = launchExhibitionMode,

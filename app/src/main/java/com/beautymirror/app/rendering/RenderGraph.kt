@@ -20,6 +20,7 @@ import com.beautymirror.app.settings.ReflectionScene
 import com.beautymirror.app.settings.QualityLevel
 import com.beautymirror.app.settings.SettingsInterpolator
 import com.beautymirror.app.settings.VisitorRevealController
+import com.beautymirror.app.settings.VisitorSessionDetector
 import com.beautymirror.app.tracking.FaceTrackingResult
 import com.beautymirror.app.util.MathUtils
 import com.beautymirror.app.util.ResourceUtils
@@ -85,6 +86,10 @@ class RenderGraph(context: Context) {
     private var lastMaskRefreshTimestampNs = Long.MIN_VALUE
     private var lakeMix = 0f
     private val visitorReveal = VisitorRevealController()
+    private val visitorSessionDetector = VisitorSessionDetector()
+    @Volatile
+    var revealProgressSnapshot: Float = 0f
+        private set
     private var lastRenderFrameNs = 0L
     private var lastLakeTrackingTimestampNs = Long.MIN_VALUE
     private var cachedLakeFaceCenterX = 0.5f
@@ -92,6 +97,13 @@ class RenderGraph(context: Context) {
     private var cachedLakeFaceWidth = 0.38f
     private var cachedLakeFaceHeight = 0.52f
     private var hadLiveTracking = false
+
+    /** Restarts the workshop transformation after a look is committed from the UI. */
+    fun restartVisitorReveal() {
+        visitorReveal.restart()
+        revealProgressSnapshot = 0f
+        settingsInterpolator.resetEffectsGate()
+    }
 
     fun setMirrorTransform(
         desiredMirror: Boolean,
@@ -178,11 +190,33 @@ class RenderGraph(context: Context) {
         val s = settingsInterpolator.tick(frameDt)
         val tr = tracking
         val perf = performanceState
+        val comparing = s.showBeforeAfter || compareHold
+
+        visitorReveal.setDuration(s.revealDurationSeconds)
+        val newVisitor = visitorSessionDetector.update(tr, frameDt)
+        if (newVisitor) {
+            // Each visitor receives a complete transformation arc, including the arrival ripple.
+            visitorReveal.restart()
+            settingsInterpolator.resetEffectsGate()
+        }
+        val pondSceneActive = s.reflectionScene == ReflectionScene.DARK_LAKE && !comparing
+        val reveal = visitorReveal.update(
+            targetPresence = if (pondSceneActive) {
+                if (tr.isValid) 1f else tr.effectOpacity
+            } else {
+                0f
+            },
+            deltaSeconds = frameDt,
+        )
+        revealProgressSnapshot = if (pondSceneActive) reveal else 1f
+
         if (hadLiveTracking && (!tr.isValid || tr.effectOpacity <= 0.01f)) {
             settingsInterpolator.resetEffectsGate()
             hadLiveTracking = false
         }
-        val opacity = tr.effectOpacity
+        // In pond mode the actual beauty graph grows with the visitor's accumulated looking time.
+        // Water is already visible at t=0; only the face correction strength is gated here.
+        val opacity = tr.effectOpacity * if (pondSceneActive) reveal else 1f
         val trackingLive = s.effectsEnabled && opacity > 0.01f
 
         // Soft-knee activation zeros weak controls so entire passes (and masks) can be skipped.
@@ -220,6 +254,7 @@ class RenderGraph(context: Context) {
         val warmth = amt(s.warmth)
 
         val runWarp = s.qualityLevel.geometryEnabled &&
+            opacity > 0.08f &&
             (faceSlim > 0f || eyeEnlarge > 0f || noseRefine > 0f)
         val runSkin = skinStrength > 0f || complexion > 0f || redness > 0f || blemish > 0f
         val runUnderEye = underEyeStrength > 0f ||
@@ -233,7 +268,7 @@ class RenderGraph(context: Context) {
             skinGlow > 0f
         val runDetail = s.qualityLevel.detailRestorationEnabled &&
             (eyeClarity > 0f || eyeSparkle > 0f || s.detailPreservation > 0.001f)
-        val runFeature = s.qualityLevel.featureEnhancementEnabled && (
+        val runFeature = s.qualityLevel.featureEnhancementEnabled && opacity > 0.06f && (
             eyeBrightening > 0f ||
                 browDefinition > 0f ||
                 teethWhitening > 0f ||
@@ -363,7 +398,6 @@ class RenderGraph(context: Context) {
 
         colorPass.warmth = warmth
         colorPass.localContrast = 0f
-        val comparing = s.showBeforeAfter || compareHold
         compositePass.beforeAfter = if (comparing) 1f else 0f
         compositePass.dimAmount = settingsInterpolator.dimAmount()
 
@@ -396,10 +430,6 @@ class RenderGraph(context: Context) {
             lastLakeTrackingTimestampNs = tr.timestampNs
         }
 
-        val reveal = visitorReveal.update(
-            targetPresence = if (lakeTarget > 0f) tr.effectOpacity else 0f,
-            deltaSeconds = frameDt,
-        )
         lakePass.faceCenterX = cachedLakeFaceCenterX
         lakePass.faceCenterY = cachedLakeFaceCenterY
         lakePass.faceWidth = cachedLakeFaceWidth
@@ -412,7 +442,11 @@ class RenderGraph(context: Context) {
         lakePass.darkness = s.lakeDarkness
         // 1.0 = still face (no puddle warp). Product default keeps the subject readable.
         lakePass.faceClarity = s.lakeFaceClarity
-        lakePass.quality = perf.sampleScale
+        lakePass.quality = if (s.qualityLevel == QualityLevel.PERFORMANCE) {
+            0.18f
+        } else {
+            perf.sampleScale
+        }
         lakePass.enabled = lakeMix > 0.003f
 
         var read: GlTexture = originalTex

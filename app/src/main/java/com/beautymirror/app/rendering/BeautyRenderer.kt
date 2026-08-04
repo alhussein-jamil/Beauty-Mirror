@@ -46,6 +46,7 @@ class BeautyRenderer(
     private var hasTexMatrix = false
     private var rgbaScratch: java.nio.ByteBuffer? = null
     private var frameListener: FrameListener? = null
+    @Volatile private var revealProgressCached: Float = 0f
     // If setOutputSurface arrives before GL init, replay after initialize.
     private var pendingOutput: Triple<Surface, Int, Int>? = null
 
@@ -108,6 +109,15 @@ class BeautyRenderer(
     fun setFrameListener(listener: FrameListener?) {
         frameListener = listener
     }
+
+    fun restartVisitorReveal() {
+        glHandler.post {
+            graph?.restartVisitorReveal()
+            revealProgressCached = 0f
+        }
+    }
+
+    fun visitorRevealProgress(): Float = revealProgressCached
 
     fun initializeOnGlThread() {
         check(glHandler.looper.isCurrentThread)
@@ -281,6 +291,7 @@ class BeautyRenderer(
                 cameraTransformRequestsMirror = cameraTransformRequestsMirror,
             )
             g.renderFrame(oes, texMatrix, outputWidth, outputHeight, toScreen = true)
+            revealProgressCached = g.revealProgressSnapshot
             mgr.setPresentationTime(st.timestamp)
             mgr.swapBuffers()
             frameListener?.onFramePresented()

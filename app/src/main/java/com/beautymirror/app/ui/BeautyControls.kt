@@ -2,6 +2,7 @@ package com.beautymirror.app.ui
 
 import android.app.Activity
 import androidx.annotation.StringRes
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -43,6 +44,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -137,6 +141,7 @@ fun BeautyControls(
         lakeMotion = settings.lakeMotion,
         lakeDarkness = settings.lakeDarkness,
         lakeFaceClarity = settings.lakeFaceClarity,
+        revealDurationSeconds = settings.revealDurationSeconds,
     )
 
     fun custom(block: BeautySettings.() -> BeautySettings) {
@@ -206,7 +211,7 @@ fun BeautyControls(
                 onClick = onDismiss,
                 modifier = Modifier.defaultMinSize(minHeight = 44.dp),
             ) {
-                Text(stringResource(R.string.done), color = BmAccent)
+                Text(stringResource(R.string.return_to_pond), color = BmAccent)
             }
         }
 
@@ -423,6 +428,11 @@ fun BeautyControls(
                         onSelect = { onChange(settings.copy(reflectionScene = it)) },
                     )
                     if (settings.reflectionScene == ReflectionScene.DARK_LAKE) {
+                        PondSceneCard(settings)
+                        TransitionDurationSlider(
+                            seconds = settings.revealDurationSeconds,
+                            onValue = { onChange(settings.copy(revealDurationSeconds = it).clamped()) },
+                        )
                         Text(stringResource(R.string.scene_moods), color = BmText, fontSize = 12.sp)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -434,14 +444,14 @@ fun BeautyControls(
                                 modifier = Modifier.weight(1f),
                                 active = settings.lakeMotion <= 0.40f && settings.lakeDarkness >= 0.68f,
                                 testTag = "mood_still_well",
-                            ) { applyLakeMood(0.70f, 0.32f, 0.78f, 1f) }
+                            ) { applyLakeMood(0.80f, 0.22f, 0.68f, 0.92f) }
                             SceneMoodCard(
                                 title = stringResource(R.string.scene_mood_marsh),
                                 subtitle = stringResource(R.string.scene_mood_marsh_sub),
                                 modifier = Modifier.weight(1f),
                                 active = settings.lakeMotion in 0.40f..0.65f && settings.lakeDarkness >= 0.70f,
                                 testTag = "mood_marsh",
-                            ) { applyLakeMood(0.78f, 0.55f, 0.74f, 1f) }
+                            ) { applyLakeMood(0.86f, 0.36f, 0.66f, 0.86f) }
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -453,14 +463,14 @@ fun BeautyControls(
                                 modifier = Modifier.weight(1f),
                                 active = settings.lakeMotion >= 0.70f,
                                 testTag = "mood_ripple",
-                            ) { applyLakeMood(0.85f, 0.92f, 0.62f, 1f) }
+                            ) { applyLakeMood(0.88f, 0.50f, 0.58f, 0.82f) }
                             SceneMoodCard(
                                 title = stringResource(R.string.scene_mood_reveal),
                                 subtitle = stringResource(R.string.scene_mood_reveal_sub),
                                 modifier = Modifier.weight(1f),
                                 active = settings.lakeIntensity >= 0.80f && settings.lakeFaceClarity >= 0.90f,
                                 testTag = "mood_reveal",
-                            ) { applyLakeMood(0.88f, 0.70f, 0.68f, 1f) }
+                            ) { applyLakeMood(0.92f, 0.40f, 0.60f, 0.88f) }
                         }
                         SettingSlider(stringResource(R.string.lake_intensity), settings.lakeIntensity, "slider_lake_intensity") { onChange(settings.copy(lakeIntensity = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_motion), settings.lakeMotion, "slider_lake_motion") { onChange(settings.copy(lakeMotion = it).clamped()) }
@@ -653,6 +663,111 @@ private fun ReflectionSceneSelector(selected: ReflectionScene, onSelect: (Reflec
             modifier = Modifier.weight(1f),
             testTag = "scene_lake",
         ) { onSelect(ReflectionScene.DARK_LAKE) }
+    }
+}
+
+@Composable
+private fun PondSceneCard(settings: BeautySettings) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color(0xFF242B28))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(stringResource(R.string.pond_reflection_title), color = BmText, fontSize = 13.sp)
+        Text(stringResource(R.string.pond_reflection_subtitle), color = BmTextMuted, fontSize = 10.sp)
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(96.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF555D59)),
+        ) {
+            val center = Offset(size.width * 0.53f, size.height * 0.50f)
+            drawOval(
+                color = Color(0x55434B46),
+                topLeft = Offset(size.width * 0.30f, size.height * 0.13f),
+                size = androidx.compose.ui.geometry.Size(size.width * 0.46f, size.height * 0.72f),
+            )
+            val rippleColor = Color(0x669AA29B)
+            repeat(3) { index ->
+                val radius = size.minDimension * (0.15f + index * 0.11f)
+                drawCircle(
+                    color = rippleColor.copy(alpha = 0.34f - index * 0.07f),
+                    radius = radius,
+                    center = center,
+                    style = Stroke(width = 1.4f),
+                )
+            }
+            val particleCount = 18
+            repeat(particleCount) { index ->
+                val x = ((index * 37) % 97) / 97f * size.width
+                val y = ((index * 61 + 17) % 101) / 101f * size.height
+                drawCircle(Color(0x77D4D1C4), 1.2f, Offset(x, y))
+            }
+            drawLine(
+                color = Color(0x55E4E0CF),
+                start = Offset(size.width * 0.10f, size.height * 0.24f),
+                end = Offset(size.width * 0.76f, size.height * 0.20f),
+                strokeWidth = 3f,
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                stringResource(R.string.pond_duration_summary, settings.revealDurationSeconds),
+                color = BmAccent,
+                fontSize = 10.sp,
+            )
+            Text(
+                stringResource(R.string.pond_new_face_restart),
+                color = BmTextMuted,
+                fontSize = 10.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TransitionDurationSlider(
+    seconds: Float,
+    onValue: (Float) -> Unit,
+) {
+    val minSeconds = 3f
+    val maxSeconds = 30f
+    val safe = seconds.coerceIn(minSeconds, maxSeconds)
+    val normalized = (safe - minSeconds) / (maxSeconds - minSeconds)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(BmSurfaceStrong.copy(alpha = 0.72f))
+            .padding(horizontal = 11.dp, vertical = 4.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.transformation_duration), color = BmText, fontSize = 12.sp)
+            Text(stringResource(R.string.seconds_value, safe), color = BmAccent, fontSize = 10.sp)
+        }
+        Slider(
+            value = normalized,
+            onValueChange = { onValue(minSeconds + it * (maxSeconds - minSeconds)) },
+            modifier = Modifier
+                .height(36.dp)
+                .testTag("slider_reveal_duration"),
+            colors = SliderDefaults.colors(
+                thumbColor = BmAccent,
+                activeTrackColor = BmAccent,
+                inactiveTrackColor = BmTextMuted.copy(alpha = 0.18f),
+            ),
+        )
     }
 }
 

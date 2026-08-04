@@ -46,11 +46,12 @@ data class BeautySettings(
     val noseRefinement: Float = 0.05f,
 
     // Exhibition scene. The water pass runs after beautification so corrections remain visible.
-    val reflectionScene: ReflectionScene = ReflectionScene.MIRROR,
-    val lakeIntensity: Float = 0.78f,
-    val lakeMotion: Float = 0.55f,
-    val lakeDarkness: Float = 0.70f,
-    val lakeFaceClarity: Float = 1f,
+    val reflectionScene: ReflectionScene = ReflectionScene.DARK_LAKE,
+    val lakeIntensity: Float = 0.82f,
+    val lakeMotion: Float = 0.34f,
+    val lakeDarkness: Float = 0.62f,
+    val lakeFaceClarity: Float = 0.86f,
+    val revealDurationSeconds: Float = 10f,
 
     val qualityLevel: QualityLevel = QualityLevel.MEDIUM,
     val showBeforeAfter: Boolean = false,
@@ -127,6 +128,11 @@ data class BeautySettings(
         lakeMotion = MathUtils.clamp(lakeMotion, 0f, 1f),
         lakeDarkness = MathUtils.clamp(lakeDarkness, 0f, 1f),
         lakeFaceClarity = MathUtils.clamp(lakeFaceClarity, 0f, 1f),
+        revealDurationSeconds = MathUtils.clamp(
+            revealDurationSeconds,
+            VisitorRevealController.MIN_DURATION_SECONDS,
+            VisitorRevealController.MAX_DURATION_SECONDS,
+        ),
     )
 
     companion object {
@@ -334,6 +340,7 @@ data class BeautySettings(
                 lakeMotion = current.lakeMotion,
                 lakeDarkness = current.lakeDarkness,
                 lakeFaceClarity = current.lakeFaceClarity,
+                revealDurationSeconds = current.revealDurationSeconds,
             )
         }
 
@@ -381,6 +388,7 @@ data class BeautySettings(
                 lakeMotion = base.lakeMotion,
                 lakeDarkness = base.lakeDarkness,
                 lakeFaceClarity = base.lakeFaceClarity,
+                revealDurationSeconds = base.revealDurationSeconds,
             ).clamped()
         }
     }
