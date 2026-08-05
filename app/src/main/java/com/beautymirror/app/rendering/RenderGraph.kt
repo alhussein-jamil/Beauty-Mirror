@@ -294,12 +294,11 @@ class RenderGraph(context: Context) {
         }
 
         val maskStart = SystemClock.elapsedRealtimeNanos()
-        // Pond mode needs the real landmark silhouette immediately, even before the timed beauty
-        // graph becomes strong enough to run. Render only that one mask during the first moments;
-        // upgrade to the full mask set when beautification passes activate.
-        val needPondFaceMask = lakeTarget > 0f && tr.effectOpacity > 0.01f
-        val needMasks = runAny || needPondFaceMask
-        val faceOnlyMask = needPondFaceMask && !runAny
+        // The fluid pond no longer clips the camera to a face silhouette. A broad analytic guide in
+        // the shader merges the complete camera frame, so masks are generated only when an actual
+        // beauty pass needs them. This removes the previous 3–24 ms early-arrival mask cost.
+        val needMasks = runAny
+        val faceOnlyMask = false
         if (needMasks) {
             // Landmarks normally update at 8–20 Hz while the camera renders at ~30 FPS. Reusing
             // masks until a new tracking result arrives avoids re-drawing and blurring textures on
@@ -439,7 +438,7 @@ class RenderGraph(context: Context) {
                 }
                 cachedLakeFaceCenterX = (minX + maxX) * 0.5f
                 cachedLakeFaceCenterY = (minY + maxY) * 0.5f
-                // Slight pad: the ellipse is only a cheap shader gate around the real face mask.
+                // Broad guide for camera/water blending; it is deliberately wider than the face.
                 cachedLakeFaceWidth = ((maxX - minX) * 1.06f).coerceIn(0.12f, 0.85f)
                 cachedLakeFaceHeight = ((maxY - minY) * 1.08f).coerceIn(0.16f, 0.95f)
             }
@@ -450,15 +449,17 @@ class RenderGraph(context: Context) {
         lakePass.faceCenterY = cachedLakeFaceCenterY
         lakePass.faceWidth = cachedLakeFaceWidth
         lakePass.faceHeight = cachedLakeFaceHeight
-        lakePass.faceMask = if (needPondFaceMask && masksValid) maskRenderer.faceMask else null
         lakePass.facePresence = tr.effectOpacity
         lakePass.visitorReveal = reveal
         lakePass.timeSeconds = (SystemClock.elapsedRealtime() % 3_600_000L) / 1_000f
         lakePass.intensity = s.lakeIntensity * lakeMix
         lakePass.motion = s.lakeMotion
         lakePass.darkness = s.lakeDarkness
-        // 1.0 keeps the isolated face fully readable; shader water veil remains deliberately tiny.
+        // Face clarity protects readability while the whole camera frame remains fluidly merged.
         lakePass.faceClarity = s.lakeFaceClarity
+        lakePass.cameraBlend = s.lakeCameraBlend
+        lakePass.deformation = s.lakeDeformation
+        lakePass.swirl = s.lakeSwirl
         lakePass.quality = if (s.qualityLevel == QualityLevel.PERFORMANCE) {
             0.18f
         } else {

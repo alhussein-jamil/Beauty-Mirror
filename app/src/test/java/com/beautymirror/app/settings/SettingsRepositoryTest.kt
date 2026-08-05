@@ -19,10 +19,13 @@ class SettingsRepositoryTest {
         assertThat(loaded.preset).isEqualTo(BeautyPreset.STAGE)
         assertThat(loaded.effectsEnabled).isTrue()
         assertThat(loaded.reflectionScene).isEqualTo(ReflectionScene.DARK_LAKE)
-        assertThat(loaded.lakeIntensity).isWithin(1e-3f).of(0.90f)
-        assertThat(loaded.lakeMotion).isWithin(1e-3f).of(0.30f)
-        assertThat(loaded.lakeDarkness).isWithin(1e-3f).of(0.50f)
-        assertThat(loaded.lakeFaceClarity).isWithin(1e-3f).of(0.96f)
+        assertThat(loaded.lakeIntensity).isWithin(1e-3f).of(0.92f)
+        assertThat(loaded.lakeMotion).isWithin(1e-3f).of(0.64f)
+        assertThat(loaded.lakeDarkness).isWithin(1e-3f).of(0.14f)
+        assertThat(loaded.lakeFaceClarity).isWithin(1e-3f).of(0.90f)
+        assertThat(loaded.lakeCameraBlend).isWithin(1e-3f).of(0.58f)
+        assertThat(loaded.lakeDeformation).isWithin(1e-3f).of(0.40f)
+        assertThat(loaded.lakeSwirl).isWithin(1e-3f).of(0.82f)
         assertThat(loaded.revealDurationSeconds).isWithin(1e-3f).of(10f)
     }
 
@@ -54,6 +57,9 @@ class SettingsRepositoryTest {
             lakeMotion = 0.27f,
             lakeDarkness = 0.59f,
             lakeFaceClarity = 0.83f,
+            lakeCameraBlend = 0.74f,
+            lakeDeformation = 0.36f,
+            lakeSwirl = 0.91f,
             revealDurationSeconds = 14f,
         ).clamped()
         repo.save(custom)
@@ -77,6 +83,9 @@ class SettingsRepositoryTest {
         assertThat(loaded.lakeMotion).isWithin(1e-3f).of(0.27f)
         assertThat(loaded.lakeDarkness).isWithin(1e-3f).of(0.59f)
         assertThat(loaded.lakeFaceClarity).isWithin(1e-3f).of(0.83f)
+        assertThat(loaded.lakeCameraBlend).isWithin(1e-3f).of(0.74f)
+        assertThat(loaded.lakeDeformation).isWithin(1e-3f).of(0.36f)
+        assertThat(loaded.lakeSwirl).isWithin(1e-3f).of(0.91f)
         assertThat(loaded.revealDurationSeconds).isWithin(1e-3f).of(14f)
     }
 }

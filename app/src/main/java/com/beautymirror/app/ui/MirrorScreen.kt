@@ -29,10 +29,13 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -708,18 +711,18 @@ private fun PondWaitingOverlay(
         Canvas(modifier = Modifier.size(62.dp)) {
             val center = Offset(size.width * 0.5f, size.height * 0.5f)
             drawCircle(
-                color = Color(0x99D3D7CE),
+                color = Color(0xB8DDF4FF),
                 radius = size.minDimension * 0.10f,
                 center = center,
             )
             drawCircle(
-                color = Color(0x66D3D7CE),
+                color = Color(0x88B9E6FF),
                 radius = size.minDimension * 0.25f,
                 center = center,
                 style = Stroke(width = 1.5.dp.toPx()),
             )
             drawCircle(
-                color = Color(0x33D3D7CE),
+                color = Color(0x66A0D9F8),
                 radius = size.minDimension * 0.43f,
                 center = center,
                 style = Stroke(width = 1.dp.toPx()),
@@ -728,12 +731,12 @@ private fun PondWaitingOverlay(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 stringResource(R.string.pond_waiting_title),
-                color = Color(0xFFE5E7E0),
+                color = Color(0xFFF1FAFF),
                 fontSize = 13.sp,
             )
             Text(
                 stringResource(R.string.pond_waiting_subtitle),
-                color = Color(0xB8E5E7E0),
+                color = Color(0xC9DDF2FF),
                 fontSize = 10.sp,
             )
         }
@@ -751,7 +754,7 @@ private fun PondRevealOverlay(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        color = Color(0x85151B18),
+        color = Color(0xA1122B42),
         shadowElevation = 2.dp,
     ) {
         Row(
@@ -762,8 +765,8 @@ private fun PondRevealOverlay(
             CircularProgressIndicator(
                 progress = safe,
                 modifier = Modifier.size(30.dp),
-                color = Color(0xFFD9DDD4),
-                trackColor = Color(0x35D9DDD4),
+                color = Color(0xFFE3F6FF),
+                trackColor = Color(0x5579C8F2),
                 strokeWidth = 2.dp,
             )
             Column {
@@ -790,7 +793,15 @@ private fun LakeAdjustPanel(
     onTurnOff: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    fun mood(intensity: Float, motion: Float, darkness: Float, clarity: Float) {
+    fun mood(
+        intensity: Float,
+        motion: Float,
+        darkness: Float,
+        clarity: Float,
+        cameraBlend: Float,
+        deformation: Float,
+        swirl: Float,
+    ) {
         onChange(
             settings.copy(
                 reflectionScene = ReflectionScene.DARK_LAKE,
@@ -798,6 +809,9 @@ private fun LakeAdjustPanel(
                 lakeMotion = motion,
                 lakeDarkness = darkness,
                 lakeFaceClarity = clarity,
+                lakeCameraBlend = cameraBlend,
+                lakeDeformation = deformation,
+                lakeSwirl = swirl,
             ).clamped(),
         )
     }
@@ -807,12 +821,14 @@ private fun LakeAdjustPanel(
             .clickable(onClick = {})
             .testTag("lake_adjust_panel"),
         shape = RoundedCornerShape(28.dp),
-        color = Color(0xEE151A18),
+        color = Color(0xF0182C3D),
         shadowElevation = 12.dp,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(max = 590.dp)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -846,7 +862,7 @@ private fun LakeAdjustPanel(
 
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = Color(0x552D3932),
+                color = Color(0x66426C88),
             ) {
                 Text(
                     stringResource(R.string.lake_scene_hint),
@@ -862,20 +878,20 @@ private fun LakeAdjustPanel(
                 horizontalArrangement = Arrangement.spacedBy(7.dp),
             ) {
                 PondMoodButton(
-                    title = stringResource(R.string.scene_mood_still_well),
-                    active = settings.lakeMotion in 0.24f..0.36f && settings.lakeDarkness in 0.42f..0.58f,
+                    title = stringResource(R.string.scene_mood_sky),
+                    active = settings.lakeDeformation in 0.16f..0.29f,
                     modifier = Modifier.weight(1f),
-                ) { mood(0.90f, 0.30f, 0.50f, 0.96f) }
+                ) { mood(0.88f, 0.42f, 0.18f, 0.94f, 0.72f, 0.24f, 0.82f) }
                 PondMoodButton(
-                    title = stringResource(R.string.scene_mood_marsh),
-                    active = settings.lakeDarkness >= 0.60f,
+                    title = stringResource(R.string.scene_mood_silk),
+                    active = settings.lakeDeformation < 0.16f,
                     modifier = Modifier.weight(1f),
-                ) { mood(0.92f, 0.22f, 0.68f, 0.95f) }
+                ) { mood(0.82f, 0.27f, 0.12f, 0.98f, 0.78f, 0.10f, 0.62f) }
                 PondMoodButton(
-                    title = stringResource(R.string.scene_mood_ripple),
-                    active = settings.lakeFaceClarity >= 0.985f && settings.lakeDarkness <= 0.42f,
+                    title = stringResource(R.string.scene_mood_fluid),
+                    active = settings.lakeDeformation >= 0.34f,
                     modifier = Modifier.weight(1f),
-                ) { mood(0.76f, 0.20f, 0.36f, 1.0f) }
+                ) { mood(0.92f, 0.56f, 0.22f, 0.90f, 0.70f, 0.42f, 0.94f) }
             }
 
             LakeDurationSlider(
@@ -883,15 +899,40 @@ private fun LakeAdjustPanel(
                 onValue = { onChange(settings.copy(revealDurationSeconds = it).clamped()) },
             )
             LakeSliderRow(
+                title = stringResource(R.string.lake_intensity),
+                value = settings.lakeIntensity,
+                testTag = "popup_lake_intensity",
+            ) { onChange(settings.copy(lakeIntensity = it).clamped()) }
+            LakeSliderRow(
+                title = stringResource(R.string.lake_camera_blend),
+                value = settings.lakeCameraBlend,
+                testTag = "popup_lake_camera_blend",
+            ) { onChange(settings.copy(lakeCameraBlend = it).clamped()) }
+            LakeSliderRow(
                 title = stringResource(R.string.lake_face_clarity),
                 value = settings.lakeFaceClarity,
                 testTag = "popup_lake_clarity",
             ) { onChange(settings.copy(lakeFaceClarity = it).clamped()) }
             LakeSliderRow(
+                title = stringResource(R.string.lake_deformation),
+                value = settings.lakeDeformation,
+                testTag = "popup_lake_deformation",
+            ) { onChange(settings.copy(lakeDeformation = it).clamped()) }
+            LakeSliderRow(
+                title = stringResource(R.string.lake_swirl),
+                value = settings.lakeSwirl,
+                testTag = "popup_lake_swirl",
+            ) { onChange(settings.copy(lakeSwirl = it).clamped()) }
+            LakeSliderRow(
                 title = stringResource(R.string.lake_motion),
                 value = settings.lakeMotion,
                 testTag = "popup_lake_motion",
             ) { onChange(settings.copy(lakeMotion = it).clamped()) }
+            LakeSliderRow(
+                title = stringResource(R.string.lake_darkness),
+                value = settings.lakeDarkness,
+                testTag = "popup_lake_depth",
+            ) { onChange(settings.copy(lakeDarkness = it).clamped()) }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -910,7 +951,7 @@ private fun LakeAdjustPanel(
                         .weight(2f)
                         .defaultMinSize(minHeight = 42.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0x33DCE4DA)),
+                        .background(Color(0x335DB8EA)),
                 ) {
                     Text(stringResource(R.string.return_to_pond), color = BmText)
                 }

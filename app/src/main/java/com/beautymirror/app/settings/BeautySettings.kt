@@ -47,10 +47,13 @@ data class BeautySettings(
 
     // Exhibition scene. The water pass runs after beautification so corrections remain visible.
     val reflectionScene: ReflectionScene = ReflectionScene.DARK_LAKE,
-    val lakeIntensity: Float = 0.90f,
-    val lakeMotion: Float = 0.30f,
-    val lakeDarkness: Float = 0.50f,
-    val lakeFaceClarity: Float = 0.96f,
+    val lakeIntensity: Float = 0.92f,
+    val lakeMotion: Float = 0.64f,
+    val lakeDarkness: Float = 0.14f,
+    val lakeFaceClarity: Float = 0.90f,
+    val lakeCameraBlend: Float = 0.58f,
+    val lakeDeformation: Float = 0.40f,
+    val lakeSwirl: Float = 0.82f,
     val revealDurationSeconds: Float = 10f,
 
     val qualityLevel: QualityLevel = QualityLevel.MEDIUM,
@@ -128,6 +131,9 @@ data class BeautySettings(
         lakeMotion = MathUtils.clamp(lakeMotion, 0f, 1f),
         lakeDarkness = MathUtils.clamp(lakeDarkness, 0f, 1f),
         lakeFaceClarity = MathUtils.clamp(lakeFaceClarity, 0f, 1f),
+        lakeCameraBlend = MathUtils.clamp(lakeCameraBlend, 0f, 1f),
+        lakeDeformation = MathUtils.clamp(lakeDeformation, 0f, 1f),
+        lakeSwirl = MathUtils.clamp(lakeSwirl, 0f, 1f),
         revealDurationSeconds = MathUtils.clamp(
             revealDurationSeconds,
             VisitorRevealController.MIN_DURATION_SECONDS,
@@ -340,6 +346,9 @@ data class BeautySettings(
                 lakeMotion = current.lakeMotion,
                 lakeDarkness = current.lakeDarkness,
                 lakeFaceClarity = current.lakeFaceClarity,
+                lakeCameraBlend = current.lakeCameraBlend,
+                lakeDeformation = current.lakeDeformation,
+                lakeSwirl = current.lakeSwirl,
                 revealDurationSeconds = current.revealDurationSeconds,
             )
         }
@@ -388,6 +397,9 @@ data class BeautySettings(
                 lakeMotion = base.lakeMotion,
                 lakeDarkness = base.lakeDarkness,
                 lakeFaceClarity = base.lakeFaceClarity,
+                lakeCameraBlend = base.lakeCameraBlend,
+                lakeDeformation = base.lakeDeformation,
+                lakeSwirl = base.lakeSwirl,
                 revealDurationSeconds = base.revealDurationSeconds,
             ).clamped()
         }

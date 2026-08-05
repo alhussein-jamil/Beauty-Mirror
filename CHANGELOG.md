@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.0.0
+
+- Rebuilt the pond shader around continuous sky-blue wave normals and optical highlights.
+- Merged the complete camera reflection with the pond instead of isolating a face cut-out.
+- Added face-centered arrival vortex, camera blend, deformation and swirl controls.
+- Removed early pond mask generation and added quality-scaled wave complexity.
+- Redesigned pond presets and curator copy for the workshop installation.
+- Kept lively sun reflections and wave motion after the visitor reveal settles (pond no longer
+  fades away at end of transition).
+
 ## 5.0.0
 
 - Replaced the camera-backed idle view with a fully procedural animated pond screensaver.

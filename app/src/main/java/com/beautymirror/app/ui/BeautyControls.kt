@@ -141,6 +141,9 @@ fun BeautyControls(
         lakeMotion = settings.lakeMotion,
         lakeDarkness = settings.lakeDarkness,
         lakeFaceClarity = settings.lakeFaceClarity,
+        lakeCameraBlend = settings.lakeCameraBlend,
+        lakeDeformation = settings.lakeDeformation,
+        lakeSwirl = settings.lakeSwirl,
         revealDurationSeconds = settings.revealDurationSeconds,
     )
 
@@ -165,7 +168,15 @@ fun BeautyControls(
         onChange(committed.clamped())
     }
 
-    fun applyLakeMood(intensity: Float, motion: Float, darkness: Float, clarity: Float) {
+    fun applyLakeMood(
+        intensity: Float,
+        motion: Float,
+        darkness: Float,
+        clarity: Float,
+        cameraBlend: Float,
+        deformation: Float,
+        swirl: Float,
+    ) {
         onChange(
             settings.copy(
                 reflectionScene = ReflectionScene.DARK_LAKE,
@@ -173,6 +184,9 @@ fun BeautyControls(
                 lakeMotion = motion,
                 lakeDarkness = darkness,
                 lakeFaceClarity = clarity,
+                lakeCameraBlend = cameraBlend,
+                lakeDeformation = deformation,
+                lakeSwirl = swirl,
             ).clamped(),
         )
     }
@@ -439,43 +453,46 @@ fun BeautyControls(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             SceneMoodCard(
-                                title = stringResource(R.string.scene_mood_still_well),
-                                subtitle = stringResource(R.string.scene_mood_still_well_sub),
+                                title = stringResource(R.string.scene_mood_sky),
+                                subtitle = stringResource(R.string.scene_mood_sky_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeMotion in 0.24f..0.36f && settings.lakeDarkness in 0.42f..0.58f,
-                                testTag = "mood_still_well",
-                            ) { applyLakeMood(0.90f, 0.30f, 0.50f, 0.96f) }
+                                active = settings.lakeDeformation in 0.34f..0.46f && settings.lakeMotion in 0.55f..0.72f,
+                                testTag = "mood_sky",
+                            ) { applyLakeMood(0.92f, 0.64f, 0.14f, 0.90f, 0.58f, 0.40f, 0.82f) }
                             SceneMoodCard(
-                                title = stringResource(R.string.scene_mood_marsh),
-                                subtitle = stringResource(R.string.scene_mood_marsh_sub),
+                                title = stringResource(R.string.scene_mood_silk),
+                                subtitle = stringResource(R.string.scene_mood_silk_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeDarkness >= 0.60f,
-                                testTag = "mood_marsh",
-                            ) { applyLakeMood(0.92f, 0.22f, 0.68f, 0.95f) }
+                                active = settings.lakeDeformation < 0.22f && settings.lakeMotion < 0.40f,
+                                testTag = "mood_silk",
+                            ) { applyLakeMood(0.86f, 0.34f, 0.10f, 0.96f, 0.62f, 0.16f, 0.55f) }
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             SceneMoodCard(
-                                title = stringResource(R.string.scene_mood_ripple),
-                                subtitle = stringResource(R.string.scene_mood_ripple_sub),
+                                title = stringResource(R.string.scene_mood_fluid),
+                                subtitle = stringResource(R.string.scene_mood_fluid_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeFaceClarity >= 0.985f && settings.lakeDarkness <= 0.42f,
-                                testTag = "mood_ripple",
-                            ) { applyLakeMood(0.76f, 0.20f, 0.36f, 1.0f) }
+                                active = settings.lakeDeformation >= 0.50f,
+                                testTag = "mood_fluid",
+                            ) { applyLakeMood(0.95f, 0.78f, 0.16f, 0.88f, 0.52f, 0.62f, 0.94f) }
                             SceneMoodCard(
-                                title = stringResource(R.string.scene_mood_reveal),
-                                subtitle = stringResource(R.string.scene_mood_reveal_sub),
+                                title = stringResource(R.string.scene_mood_gallery),
+                                subtitle = stringResource(R.string.scene_mood_gallery_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeIntensity in 0.84f..0.96f && settings.lakeFaceClarity in 0.94f..0.99f,
-                                testTag = "mood_reveal",
-                            ) { applyLakeMood(0.88f, 0.28f, 0.46f, 0.98f) }
+                                active = settings.lakeCameraBlend >= 0.68f && settings.lakeDeformation in 0.28f..0.48f,
+                                testTag = "mood_gallery",
+                            ) { applyLakeMood(0.90f, 0.50f, 0.12f, 0.94f, 0.72f, 0.36f, 0.78f) }
                         }
                         SettingSlider(stringResource(R.string.lake_intensity), settings.lakeIntensity, "slider_lake_intensity") { onChange(settings.copy(lakeIntensity = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_camera_blend), settings.lakeCameraBlend, "slider_lake_camera_blend") { onChange(settings.copy(lakeCameraBlend = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_face_clarity), settings.lakeFaceClarity, "slider_lake_clarity") { onChange(settings.copy(lakeFaceClarity = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_deformation), settings.lakeDeformation, "slider_lake_deformation") { onChange(settings.copy(lakeDeformation = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_swirl), settings.lakeSwirl, "slider_lake_swirl") { onChange(settings.copy(lakeSwirl = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_motion), settings.lakeMotion, "slider_lake_motion") { onChange(settings.copy(lakeMotion = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_darkness), settings.lakeDarkness, "slider_lake_darkness") { onChange(settings.copy(lakeDarkness = it).clamped()) }
-                        SettingSlider(stringResource(R.string.lake_face_clarity), settings.lakeFaceClarity, "slider_lake_clarity") { onChange(settings.copy(lakeFaceClarity = it).clamped()) }
                         Text(stringResource(R.string.lake_scene_hint), color = BmTextMuted, fontSize = 10.sp)
                     }
                 }
@@ -672,7 +689,7 @@ private fun PondSceneCard(settings: BeautySettings) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(Color(0xFF242B28))
+            .background(Color(0xFF172A3A))
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -681,77 +698,92 @@ private fun PondSceneCard(settings: BeautySettings) {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(104.dp)
+                .height(112.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFF535B56)),
+                .background(Color(0xFF68B8EA)),
         ) {
-            val pondLine = Color(0x7FA7B0A7)
-            val idleCenter = Offset(size.width * 0.22f, size.height * 0.54f)
-            repeat(3) { index ->
-                drawCircle(
-                    color = pondLine.copy(alpha = 0.40f - index * 0.09f),
-                    radius = size.minDimension * (0.10f + index * 0.09f),
-                    center = idleCenter,
-                    style = Stroke(width = 1.3f),
-                )
-            }
-            // Dark reflected bank / timber edge, matching the supplied pond references.
+            // Layered sky-water bands.
             drawRect(
-                color = Color(0xAA20251F),
+                color = Color(0xFFBCE8FF),
                 topLeft = Offset.Zero,
-                size = androidx.compose.ui.geometry.Size(size.width * 0.055f, size.height),
+                size = androidx.compose.ui.geometry.Size(size.width, size.height * 0.34f),
             )
-            drawLine(
-                color = Color(0x66E1E2D7),
-                start = Offset(size.width * 0.06f, size.height * 0.24f),
-                end = Offset(size.width * 0.46f, size.height * 0.20f),
-                strokeWidth = 3f,
+            drawRect(
+                color = Color(0xFF78C7F2),
+                topLeft = Offset(0f, size.height * 0.34f),
+                size = androidx.compose.ui.geometry.Size(size.width, size.height * 0.38f),
+            )
+            drawRect(
+                color = Color(0xFF3B8FC8),
+                topLeft = Offset(0f, size.height * 0.72f),
+                size = androidx.compose.ui.geometry.Size(size.width, size.height * 0.28f),
             )
 
-            // Curator-facing diagram: animated pond at left, isolated reflection at right.
+            // Continuous wave field across the whole preview.
+            repeat(7) { row ->
+                val y = size.height * (0.14f + row * 0.115f)
+                repeat(5) { segment ->
+                    val x0 = size.width * (segment / 5f) - size.width * 0.03f
+                    val x1 = size.width * ((segment + 0.72f) / 5f)
+                    val lift = if ((row + segment) % 2 == 0) -4f else 4f
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.20f + row * 0.012f),
+                        start = Offset(x0, y),
+                        end = Offset(x1, y + lift),
+                        strokeWidth = 1.2f,
+                    )
+                }
+            }
+
+            // Broad camera merge: no cut-out edge. The face guide only boosts clarity.
+            val center = Offset(size.width * 0.66f, size.height * 0.53f)
+            drawOval(
+                color = Color(0x55384B62),
+                topLeft = Offset(size.width * 0.44f, size.height * 0.08f),
+                size = androidx.compose.ui.geometry.Size(size.width * 0.43f, size.height * 0.84f),
+            )
+            drawOval(
+                color = Color(0x886F879B),
+                topLeft = Offset(size.width * 0.54f, size.height * 0.18f),
+                size = androidx.compose.ui.geometry.Size(size.width * 0.25f, size.height * 0.66f),
+            )
+            drawOval(
+                color = Color(0xAA213646),
+                topLeft = Offset(size.width * 0.585f, size.height * 0.39f),
+                size = androidx.compose.ui.geometry.Size(size.width * 0.045f, size.height * 0.055f),
+            )
+            drawOval(
+                color = Color(0xAA213646),
+                topLeft = Offset(size.width * 0.70f, size.height * 0.39f),
+                size = androidx.compose.ui.geometry.Size(size.width * 0.045f, size.height * 0.055f),
+            )
             drawLine(
-                color = Color(0x99D8DED5),
-                start = Offset(size.width * 0.42f, size.height * 0.50f),
-                end = Offset(size.width * 0.54f, size.height * 0.50f),
-                strokeWidth = 1.5f,
-            )
-            val faceLeft = size.width * 0.61f
-            val faceTop = size.height * 0.12f
-            val faceWidth = size.width * 0.27f
-            val faceHeight = size.height * 0.76f
-            drawOval(
-                color = Color(0xB8A8A69D),
-                topLeft = Offset(faceLeft, faceTop),
-                size = androidx.compose.ui.geometry.Size(faceWidth, faceHeight),
-            )
-            drawOval(
-                color = Color(0xAA353832),
-                topLeft = Offset(faceLeft + faceWidth * 0.19f, faceTop + faceHeight * 0.34f),
-                size = androidx.compose.ui.geometry.Size(faceWidth * 0.19f, faceHeight * 0.08f),
-            )
-            drawOval(
-                color = Color(0xAA353832),
-                topLeft = Offset(faceLeft + faceWidth * 0.62f, faceTop + faceHeight * 0.34f),
-                size = androidx.compose.ui.geometry.Size(faceWidth * 0.19f, faceHeight * 0.08f),
-            )
-            drawLine(
-                color = Color(0x996B5553),
-                start = Offset(faceLeft + faceWidth * 0.37f, faceTop + faceHeight * 0.72f),
-                end = Offset(faceLeft + faceWidth * 0.64f, faceTop + faceHeight * 0.72f),
+                color = Color(0xB8526070),
+                start = Offset(size.width * 0.62f, size.height * 0.69f),
+                end = Offset(size.width * 0.71f, size.height * 0.69f),
                 strokeWidth = 2f,
             )
-            repeat(2) { index ->
+
+            // Arrival vortex and expanding wave.
+            repeat(3) { index ->
                 drawCircle(
-                    color = pondLine.copy(alpha = 0.25f - index * 0.08f),
-                    radius = size.minDimension * (0.18f + index * 0.11f),
-                    center = Offset(faceLeft + faceWidth * 0.5f, faceTop + faceHeight * 0.52f),
-                    style = Stroke(width = 1f),
+                    color = Color.White.copy(alpha = 0.38f - index * 0.09f),
+                    radius = size.minDimension * (0.16f + index * 0.10f),
+                    center = center,
+                    style = Stroke(width = 1.4f),
                 )
             }
-            repeat(16) { index ->
-                val x = ((index * 37 + 11) % 97) / 97f * size.width
-                val y = ((index * 61 + 17) % 101) / 101f * size.height
-                drawCircle(Color(0x66D4D1C4), 1.1f, Offset(x, y))
+            repeat(18) { index ->
+                val angle = index * 0.82f
+                val radius = size.minDimension * (0.025f + index * 0.008f)
+                drawCircle(
+                    color = Color(0x99E4F6FF),
+                    radius = 1.2f,
+                    center = Offset(
+                        center.x + kotlin.math.cos(angle.toDouble()).toFloat() * radius,
+                        center.y + kotlin.math.sin(angle.toDouble()).toFloat() * radius * 0.62f,
+                    ),
+                )
             }
         }
         Row(

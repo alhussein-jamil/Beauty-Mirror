@@ -1,104 +1,56 @@
-# Pond workshop mode
+# Fluid pond workshop mode
 
 ## Installation behavior
 
-1. **Idle screensaver** — the shader renders a living grey-green pond with slow murk drift,
-   reflected light, sparse sediment and independent expanding rings. The camera image is not shown.
-2. **Face acquisition** — tracking creates a blurred landmark face mask. Only that masked face is
-   composited over the pond; the surrounding room remains water.
-3. **Timed reveal** — the face is visible immediately as a mirror, while water veil, color return
-   and the real beauty graph settle over `revealDurationSeconds` (10 seconds by default).
-4. **New visitor** — a real departure or direct tracker hand-off restarts progress without storing
-   or recognizing biometric identity.
-5. **Editor dismissal** — tapping outside or returning to the pond starts the transformation again.
+1. **Idle screensaver** — the display is a fully procedural sky-blue pond. Layered directional and
+   radial waves move continuously across the full surface; the camera image is hidden.
+2. **Face acquisition** — the first stable face starts a transient vortex and expanding displacement
+   ring at the tracked face center.
+3. **Fluid camera merge** — the complete beautified camera frame fades into the water. The face
+   analytic face ellipse only guides clarity; it never clips the image into a cut-out.
+4. **Timed transformation** — beauty corrections and camera visibility progress over
+   `revealDurationSeconds` (10 seconds by default).
+5. **New visitor** — sustained departure or direct tracker hand-off restarts the reveal and vortex.
+6. **Editor dismissal** — Return to pond or tapping outside the editor restarts the experience.
 
-## Art direction
+## Curator controls
 
-The target is a murky pond / marsh / well rather than a pool: low saturation, peat shadows,
-soft workshop or sky reflections, restrained rings, no cyan caustic net, and no opaque water layer
-covering the visitor's face.
+- **Camera reflection** controls how much of the complete camera image merges into the pond.
+- **Face clarity** protects facial readability while retaining a water reflection.
+- **Image deformation** controls refraction of the camera image by the water normals.
+- **Arrival swirl** controls the transient face-centered vortex.
+- **Ripple movement** controls wave speed and amplitude.
+- **Optical depth** shifts the surface between pale sky reflection and deeper blue water.
+- **Transformation duration** is adjustable from 3 to 30 seconds.
 
-## Intended experience
+Presets:
 
-The phone behaves as a reflective pond rather than a camera-filter editor. After configuration is
-closed, the interface disappears. With no visitor, the display is entirely procedural water. Once
-a face is tracked, only the softly feathered face oval is composited over the pond; the room and
-camera background remain hidden. Over the configured duration, the face corrections progressively
-accumulate while the water veil becomes almost imperceptible.
-
-Default duration: **10 seconds**. Supported range: **3–30 seconds**.
-
-## Transition state machine
-
-A visitor session starts when a stable face becomes visible. The reveal controller progresses in
-real elapsed time, independent of camera frame rate, using a smoothstep curve. Brief detector misses
-do not restart or visibly pause the work.
-
-The reveal is restarted by:
-
-- pressing **Return to pond**;
-- tapping outside either editor sheet;
-- entering exhibition mode;
-- a new face appearing after a sustained absence;
-- a direct one-face tracker hand-off with a sustained implausible position/scale discontinuity.
-
-No photograph, face crop, biometric identifier or identity history is stored or transmitted.
+- **Sky pond** — balanced exhibition default.
+- **Silk water** — cleanest reflection and minimal deformation.
+- **Fluid** — stronger motion, vortex and refraction.
+- **Gallery** — camera-forward merge with polished moderate water movement.
 
 ## Rendering order
 
 1. Camera transform and true-mirror presentation
-2. Pose-aware masks and face geometry
-3. Skin / complexion / blemish correction
-4. Under-eye correction
-5. Face lighting and shine control
-6. Eye, brow, lip, teeth, blush and contour enhancement
-7. Optional restrained face geometry
-8. Procedural pond screensaver/background
-9. Landmark-mask face insertion with restrained refraction
-10. Final display/capture composite
+2. Pose-aware masks and geometry only when a beauty pass needs them
+3. Skin, under-eye, lighting and feature beautification
+4. Procedural sky-water wave field and optical shading
+5. Face-centered arrival vortex and expanding ring
+6. Full-frame camera/water merge with broad face-guided clarity
+7. Final display/capture composite
 
-The reveal value scales the actual beauty graph, not merely pond clarity. Therefore the face visibly
-changes the longer the visitor looks.
+## Performance
 
-## Pond visual language
+The pond remains one fullscreen GPU pass. Performance mode executes only the three base waves;
+Medium/High add finer directional and radial waves. The new merge does not require a face mask during
+early reveal, removing the old mask-generation cost that could consume several milliseconds per
+tracking update. Existing adaptive quality protection still targets the 33.3 ms frame budget.
 
-The shader follows the supplied workshop references:
+A sensor delivering fewer than 30 unique camera frames cannot be forced above its hardware cadence,
+but renderer work is reduced before it becomes the bottleneck.
 
-- low-saturation slate-grey / peat-green absorption;
-- broad irregular murk rather than turquoise water;
-- sparse stable mineral specks and occasional dark debris;
-- wide pale reflected-light bands;
-- slow concentric arrival ripples with alternating crests/troughs;
-- tightly clamped refraction so the face remains legible;
-- no hard circular portal or swimming-pool wave pattern.
+## Visitor privacy
 
-## Performance protection
-
-The target presentation cadence is 30 FPS. The app monitors average and p95 render time, slow-frame
-ratio, camera cadence and analysis cadence. It first reduces continuous sample/mask budgets, then
-steps through High → Medium → Low → Performance only after sustained overload.
-
-In Performance mode:
-
-- render height targets 480 px;
-- masks use 128 px;
-- analysis targets 6 Hz;
-- smoothing uses two samples;
-- optional geometry, detail restoration and feature styling are disabled;
-- pond extra samples, secondary ambient ripple and particles are disabled;
-- core skin, under-eye and lighting correction remain active.
-
-A camera sensor that supplies fewer than 30 unique frames cannot be forced above its hardware
-cadence; the controller distinguishes that case from renderer overload and avoids needlessly
-removing visual quality.
-
-## Workshop operation
-
-```bash
-make workshop
-make fps
-```
-
-`make workshop` builds, installs and launches the mirrored Stage preset in pond mode with the UI and
-system bars hidden. Tap the reflection to reopen controls. Use Studio → Scene to tune water and
-transition duration, then press Return to pond.
+No face identity, photograph, crop or biometric history is stored. Session restart is based only on
+tracking presence and geometric discontinuity.
