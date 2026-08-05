@@ -3,10 +3,11 @@
 
 ## Workshop pond experience
 
-The default exhibition scene is now an animated pond screensaver. With no face present, no camera
-background is displayed. When a visitor approaches, the tracked face oval is softly isolated and
-inserted into the pond while beautification accumulates over a configurable 3–30 second reveal
-(default 10 seconds). Run it with:
+The default exhibition scene is an animated sky-blue pond screensaver. With no visitor, the water
+moves continuously across the whole display. When a face appears, a fluid vortex opens at its
+location and the complete beautified camera image gradually merges with the pond—never as a cut-out.
+Camera blend, image deformation, vortex strength and the 3–30 second reveal are curator-controlled.
+Run it with:
 
 ```bash
 make workshop
@@ -31,7 +32,7 @@ A fully local Android beauty mirror designed for a live exhibition. CameraX feed
 - Quick corrections for Fresh eyes, Even skin, Defined features and Stage ready
 - Face-zone graphics plus subtle live region outlines while editing
 - Face-safe Studio docking: controls open opposite the tracked face and remain stable while posing
-- Toggleable pond / marsh / well reflection matched to the workshop references: murky slate water, mineral specks, broad reflected light and restrained concentric ripples
+- Sky-blue procedural pond with continuous multi-directional ripples, optical highlights and a transient face-centered fluid vortex
 - Parameterized 3–30 second visitor transformation (10 seconds by default): face corrections accumulate continuously while the visitor looks
 - Automatic transformation restart after settings are committed, after a visitor leaves and returns, or when tracking directly hands off to a different face
 - Off, Natural, Soft, Bright, Stage, Glam and Custom presets
@@ -44,10 +45,11 @@ A fully local Android beauty mirror designed for a live exhibition. CameraX feed
 
 ## Art-workshop pond mode
 
-The pond is a final presentation layer applied after the full beauty graph. It is intentionally not
-an animated pool filter: the palette is low-saturation grey/green, distortion is clamped, broad
-reflections remain visible, suspended specks stay fixed in pond space, and concentric ripples are
-slow and sparse.
+The pond is a final presentation layer applied after the full beauty graph. It is a sky-reflecting
+fluid surface rather than a flat image or a pool-caustic filter. The idle scene uses layered wave
+normals over the entire screen. Once a visitor appears, the full camera reflection blends into the
+water; a broad face guide improves readability without creating a silhouette edge. Deformation and
+the arrival vortex are independently adjustable.
 
 When the editor is closed with **Return to pond**, or the visitor taps outside it, the app:
 
@@ -193,7 +195,7 @@ Detailed invariants are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 - Mask textures are refreshed only when a new tracked face result or runtime quality profile arrives.
 - 30 FPS protection first interpolates samples, mask cadence and optional effect strength, then changes resolution only after sustained overload. PERFORMANCE skips optional geometry, detail restoration and feature styling while retaining core skin, under-eye and lighting correction.
 - A low camera cadence with inexpensive rendering is classified as camera-limited instead of triggering destructive quality shedding.
-- The workshop pond pass runs after face correction. Idle output is fully procedural; with a visitor, only the softly feathered landmark face mask samples the camera, and optional pond taps are removed under load.
+- The workshop pond pass runs after face correction. Idle output is fully procedural; with a visitor, the complete camera reflection is optically blended into the pond. A broad analytic face guide protects clarity, and optional pond wave layers are removed under load.
 - Camera buffers are configured to CameraX's requested resolution before the surface is provided.
 - The camera input pass performs a centered aspect-fill crop using CameraX rotation metadata instead of stretching the image.
 - MediaPipe owns an accepted `ImageProxy` until its asynchronous callback completes.

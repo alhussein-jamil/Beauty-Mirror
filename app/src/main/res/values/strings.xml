@@ -80,15 +80,15 @@
     <string name="action_stage_ready">Stage ready</string>
     <string name="action_reflection_plus">Reflection++</string>
     <string name="scene_moods">Scene moods</string>
-    <string name="scene_mood_still_well">Workshop pond</string>
-    <string name="scene_mood_still_well_sub">Grey-green water, calm living surface</string>
-    <string name="scene_mood_marsh">Marsh</string>
-    <string name="scene_mood_marsh_sub">Darker peat and slower reflections</string>
-    <string name="scene_mood_ripple">Clear reflection</string>
-    <string name="scene_mood_ripple_sub">Face-first mirror, very light water veil</string>
-    <string name="scene_mood_reveal">Exhibition</string>
-    <string name="scene_mood_reveal_sub">Balanced default for continuous visitors</string>
-    <string name="lake_scene_hint">Without a face, the pond is an animated screensaver. With a visitor, only the face is inserted into the water and the transformation restarts automatically.</string>
+    <string name="scene_mood_sky">Sky pond</string>
+    <string name="scene_mood_sky_sub">Bright sky-blue water and natural ripples</string>
+    <string name="scene_mood_silk">Silk water</string>
+    <string name="scene_mood_silk_sub">Minimal deformation and a clean reflection</string>
+    <string name="scene_mood_fluid">Fluid</string>
+    <string name="scene_mood_fluid_sub">Stronger movement, deformation and vortex</string>
+    <string name="scene_mood_gallery">Gallery</string>
+    <string name="scene_mood_gallery_sub">Clear camera merge with a polished arrival swirl</string>
+    <string name="lake_scene_hint">Without a visitor, the screen is a living sky-blue pond. When a face appears, the complete camera reflection merges into the water; the face area is only used to guide clarity, never as a cut-out.</string>
 
     <string name="skin_smoothing">Skin smoothing</string>
     <string name="smoothing_radius">Smoothing radius</string>
@@ -140,23 +140,27 @@
     <string name="lake">Pond</string>
     <string name="toggle_lake">Open pond reflection settings</string>
     <string name="mirror_scene">Mirror</string>
-    <string name="dark_lake">Pond reflection</string>
+    <string name="dark_lake">Fluid pond reflection</string>
     <string name="lake_intensity">Water presence</string>
-    <string name="lake_motion">Surface movement</string>
-    <string name="lake_darkness">Water depth</string>
-    <string name="lake_face_clarity">Reflection clarity</string>
+    <string name="lake_motion">Ripple movement</string>
+    <string name="lake_darkness">Optical depth</string>
+    <string name="lake_face_clarity">Face clarity</string>
     <string name="performance_interpolation">Adaptive processing pressure: %1$d%%</string>
 
     <string name="transformation_duration">Transformation duration</string>
     <string name="seconds_value">%1$.0f s</string>
     <string name="pond_keep_looking">Your reflection is settling</string>
     <string name="pond_reveal_remaining">Keep looking · %1$.1f s</string>
-    <string name="pond_reflection_title">Living pond reflection</string>
-    <string name="pond_reflection_subtitle">Animated pond while idle; a clear isolated face appears when a visitor approaches.</string>
+    <string name="pond_reflection_title">Sky pond mirror</string>
+    <string name="pond_reflection_subtitle">Animated blue water while idle; the entire camera reflection fluidly merges when a visitor appears.</string>
     <string name="pond_duration_summary">Transformation · %1$.0f s</string>
     <string name="pond_new_face_restart">Restarts for every visitor</string>
 
     <string name="return_to_pond">Return to pond</string>
-    <string name="pond_waiting_title">The pond is alive</string>
-    <string name="pond_waiting_subtitle">Approach the water to reveal your reflection.</string>
+    <string name="pond_waiting_title">The water is waiting</string>
+    <string name="pond_waiting_subtitle">Approach and the surface will open around your reflection.</string>
+
+    <string name="lake_camera_blend">Camera reflection</string>
+    <string name="lake_deformation">Image deformation</string>
+    <string name="lake_swirl">Arrival swirl</string>
 </resources>

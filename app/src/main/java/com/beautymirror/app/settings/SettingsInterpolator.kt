@@ -123,6 +123,9 @@ class SettingsInterpolator(
                 abs(a.lakeMotion - b.lakeMotion) > 0.001f ||
                 abs(a.lakeDarkness - b.lakeDarkness) > 0.001f ||
                 abs(a.lakeFaceClarity - b.lakeFaceClarity) > 0.001f ||
+                abs(a.lakeCameraBlend - b.lakeCameraBlend) > 0.001f ||
+                abs(a.lakeDeformation - b.lakeDeformation) > 0.001f ||
+                abs(a.lakeSwirl - b.lakeSwirl) > 0.001f ||
                 a.reflectionScene != b.reflectionScene ||
                 a.preset != b.preset ||
                 a.effectsEnabled != b.effectsEnabled
@@ -183,6 +186,9 @@ class SettingsInterpolator(
                 lakeMotion = L(from.lakeMotion, to.lakeMotion),
                 lakeDarkness = L(from.lakeDarkness, to.lakeDarkness),
                 lakeFaceClarity = L(from.lakeFaceClarity, to.lakeFaceClarity),
+                lakeCameraBlend = L(from.lakeCameraBlend, to.lakeCameraBlend),
+                lakeDeformation = L(from.lakeDeformation, to.lakeDeformation),
+                lakeSwirl = L(from.lakeSwirl, to.lakeSwirl),
             )
         }
     }
