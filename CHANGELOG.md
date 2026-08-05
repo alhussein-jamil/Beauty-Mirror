@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.1.0
+
+- Added curator controls for settled water/camera mix, ripple region count, ripple speed,
+  wave detail, specular gloss and sky-blue lift.
+- Removed scene mood presets and the sun disk; pond look is fully slider-driven.
+- Schema 15 migrates devices to the lighter sky-blue defaults.
+
 ## 6.0.0
 
 - Rebuilt the pond shader around continuous sky-blue wave normals and optical highlights.

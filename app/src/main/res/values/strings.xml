@@ -88,7 +88,24 @@
     <string name="scene_mood_fluid_sub">Stronger movement, deformation and vortex</string>
     <string name="scene_mood_gallery">Gallery</string>
     <string name="scene_mood_gallery_sub">Clear camera merge with a polished arrival swirl</string>
-    <string name="lake_scene_hint">Without a visitor, the screen is a living sky-blue pond. When a face appears, the complete camera reflection merges into the water; the face area is only used to guide clarity, never as a cut-out.</string>
+    <string name="lake_scene_hint">Without a visitor the screen is a living sky-blue pond. When a face appears the camera merges into the water. Use Settled water / Settled camera to choose the final mix; Ripple regions controls how many independent ripple centers are active.</string>
+    <string name="lake_settle_section">Settled mix</string>
+    <string name="lake_motion_section">Movement</string>
+    <string name="lake_look_section">Look</string>
+    <string name="lake_intensity">Water presence</string>
+    <string name="lake_motion">Ripple strength</string>
+    <string name="lake_darkness">Optical depth</string>
+    <string name="lake_face_clarity">Face clarity</string>
+    <string name="lake_camera_blend">Arrival camera mix</string>
+    <string name="lake_deformation">Image deformation</string>
+    <string name="lake_swirl">Arrival swirl</string>
+    <string name="lake_settled_water">Settled water</string>
+    <string name="lake_settled_camera">Settled camera</string>
+    <string name="lake_ripple_regions">Ripple regions</string>
+    <string name="lake_ripple_speed">Ripple speed</string>
+    <string name="lake_wave_detail">Wave detail</string>
+    <string name="lake_specular">Specular gloss</string>
+    <string name="lake_sky_blue">Sky blue</string>
 
     <string name="skin_smoothing">Skin smoothing</string>
     <string name="smoothing_radius">Smoothing radius</string>
@@ -141,10 +158,6 @@
     <string name="toggle_lake">Open pond reflection settings</string>
     <string name="mirror_scene">Mirror</string>
     <string name="dark_lake">Fluid pond reflection</string>
-    <string name="lake_intensity">Water presence</string>
-    <string name="lake_motion">Ripple movement</string>
-    <string name="lake_darkness">Optical depth</string>
-    <string name="lake_face_clarity">Face clarity</string>
     <string name="performance_interpolation">Adaptive processing pressure: %1$d%%</string>
 
     <string name="transformation_duration">Transformation duration</string>
@@ -159,8 +172,4 @@
     <string name="return_to_pond">Return to pond</string>
     <string name="pond_waiting_title">The water is waiting</string>
     <string name="pond_waiting_subtitle">Approach and the surface will open around your reflection.</string>
-
-    <string name="lake_camera_blend">Camera reflection</string>
-    <string name="lake_deformation">Image deformation</string>
-    <string name="lake_swirl">Arrival swirl</string>
 </resources>

@@ -460,6 +460,13 @@ class RenderGraph(context: Context) {
         lakePass.cameraBlend = s.lakeCameraBlend
         lakePass.deformation = s.lakeDeformation
         lakePass.swirl = s.lakeSwirl
+        lakePass.settledWater = s.lakeSettledWater
+        lakePass.settledCamera = s.lakeSettledCamera
+        lakePass.rippleRegions = s.lakeRippleRegions
+        lakePass.rippleSpeed = s.lakeRippleSpeed
+        lakePass.waveDetail = s.lakeWaveDetail
+        lakePass.specular = s.lakeSpecular
+        lakePass.skyBlue = s.lakeSkyBlue
         lakePass.quality = if (s.qualityLevel == QualityLevel.PERFORMANCE) {
             0.18f
         } else {

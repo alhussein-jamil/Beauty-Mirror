@@ -144,6 +144,13 @@ fun BeautyControls(
         lakeCameraBlend = settings.lakeCameraBlend,
         lakeDeformation = settings.lakeDeformation,
         lakeSwirl = settings.lakeSwirl,
+        lakeSettledWater = settings.lakeSettledWater,
+        lakeSettledCamera = settings.lakeSettledCamera,
+        lakeRippleRegions = settings.lakeRippleRegions,
+        lakeRippleSpeed = settings.lakeRippleSpeed,
+        lakeWaveDetail = settings.lakeWaveDetail,
+        lakeSpecular = settings.lakeSpecular,
+        lakeSkyBlue = settings.lakeSkyBlue,
         revealDurationSeconds = settings.revealDurationSeconds,
     )
 
@@ -166,29 +173,6 @@ fun BeautyControls(
             preserveExperience(next).copy(preset = BeautyPreset.CUSTOM)
         }
         onChange(committed.clamped())
-    }
-
-    fun applyLakeMood(
-        intensity: Float,
-        motion: Float,
-        darkness: Float,
-        clarity: Float,
-        cameraBlend: Float,
-        deformation: Float,
-        swirl: Float,
-    ) {
-        onChange(
-            settings.copy(
-                reflectionScene = ReflectionScene.DARK_LAKE,
-                lakeIntensity = intensity,
-                lakeMotion = motion,
-                lakeDarkness = darkness,
-                lakeFaceClarity = clarity,
-                lakeCameraBlend = cameraBlend,
-                lakeDeformation = deformation,
-                lakeSwirl = swirl,
-            ).clamped(),
-        )
     }
 
     val panelHeight = (LocalConfiguration.current.screenHeightDp * 0.62f)
@@ -447,52 +431,23 @@ fun BeautyControls(
                             seconds = settings.revealDurationSeconds,
                             onValue = { onChange(settings.copy(revealDurationSeconds = it).clamped()) },
                         )
-                        Text(stringResource(R.string.scene_moods), color = BmText, fontSize = 12.sp)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            SceneMoodCard(
-                                title = stringResource(R.string.scene_mood_sky),
-                                subtitle = stringResource(R.string.scene_mood_sky_sub),
-                                modifier = Modifier.weight(1f),
-                                active = settings.lakeDeformation in 0.34f..0.46f && settings.lakeMotion in 0.55f..0.72f,
-                                testTag = "mood_sky",
-                            ) { applyLakeMood(0.92f, 0.64f, 0.14f, 0.90f, 0.58f, 0.40f, 0.82f) }
-                            SceneMoodCard(
-                                title = stringResource(R.string.scene_mood_silk),
-                                subtitle = stringResource(R.string.scene_mood_silk_sub),
-                                modifier = Modifier.weight(1f),
-                                active = settings.lakeDeformation < 0.22f && settings.lakeMotion < 0.40f,
-                                testTag = "mood_silk",
-                            ) { applyLakeMood(0.86f, 0.34f, 0.10f, 0.96f, 0.62f, 0.16f, 0.55f) }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            SceneMoodCard(
-                                title = stringResource(R.string.scene_mood_fluid),
-                                subtitle = stringResource(R.string.scene_mood_fluid_sub),
-                                modifier = Modifier.weight(1f),
-                                active = settings.lakeDeformation >= 0.50f,
-                                testTag = "mood_fluid",
-                            ) { applyLakeMood(0.95f, 0.78f, 0.16f, 0.88f, 0.52f, 0.62f, 0.94f) }
-                            SceneMoodCard(
-                                title = stringResource(R.string.scene_mood_gallery),
-                                subtitle = stringResource(R.string.scene_mood_gallery_sub),
-                                modifier = Modifier.weight(1f),
-                                active = settings.lakeCameraBlend >= 0.68f && settings.lakeDeformation in 0.28f..0.48f,
-                                testTag = "mood_gallery",
-                            ) { applyLakeMood(0.90f, 0.50f, 0.12f, 0.94f, 0.72f, 0.36f, 0.78f) }
-                        }
-                        SettingSlider(stringResource(R.string.lake_intensity), settings.lakeIntensity, "slider_lake_intensity") { onChange(settings.copy(lakeIntensity = it).clamped()) }
-                        SettingSlider(stringResource(R.string.lake_camera_blend), settings.lakeCameraBlend, "slider_lake_camera_blend") { onChange(settings.copy(lakeCameraBlend = it).clamped()) }
-                        SettingSlider(stringResource(R.string.lake_face_clarity), settings.lakeFaceClarity, "slider_lake_clarity") { onChange(settings.copy(lakeFaceClarity = it).clamped()) }
+                        Text(stringResource(R.string.lake_settle_section), color = BmText, fontSize = 12.sp)
+                        SettingSlider(stringResource(R.string.lake_settled_water), settings.lakeSettledWater, "slider_lake_settled_water") { onChange(settings.copy(lakeSettledWater = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_settled_camera), settings.lakeSettledCamera, "slider_lake_settled_camera") { onChange(settings.copy(lakeSettledCamera = it).clamped()) }
+                        Text(stringResource(R.string.lake_motion_section), color = BmText, fontSize = 12.sp)
+                        SettingSlider(stringResource(R.string.lake_ripple_regions), settings.lakeRippleRegions, "slider_lake_ripple_regions") { onChange(settings.copy(lakeRippleRegions = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_ripple_speed), settings.lakeRippleSpeed, "slider_lake_ripple_speed") { onChange(settings.copy(lakeRippleSpeed = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_wave_detail), settings.lakeWaveDetail, "slider_lake_wave_detail") { onChange(settings.copy(lakeWaveDetail = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_motion), settings.lakeMotion, "slider_lake_motion") { onChange(settings.copy(lakeMotion = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_deformation), settings.lakeDeformation, "slider_lake_deformation") { onChange(settings.copy(lakeDeformation = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_swirl), settings.lakeSwirl, "slider_lake_swirl") { onChange(settings.copy(lakeSwirl = it).clamped()) }
-                        SettingSlider(stringResource(R.string.lake_motion), settings.lakeMotion, "slider_lake_motion") { onChange(settings.copy(lakeMotion = it).clamped()) }
+                        Text(stringResource(R.string.lake_look_section), color = BmText, fontSize = 12.sp)
+                        SettingSlider(stringResource(R.string.lake_sky_blue), settings.lakeSkyBlue, "slider_lake_sky_blue") { onChange(settings.copy(lakeSkyBlue = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_intensity), settings.lakeIntensity, "slider_lake_intensity") { onChange(settings.copy(lakeIntensity = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_specular), settings.lakeSpecular, "slider_lake_specular") { onChange(settings.copy(lakeSpecular = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_darkness), settings.lakeDarkness, "slider_lake_darkness") { onChange(settings.copy(lakeDarkness = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_camera_blend), settings.lakeCameraBlend, "slider_lake_camera_blend") { onChange(settings.copy(lakeCameraBlend = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_face_clarity), settings.lakeFaceClarity, "slider_lake_clarity") { onChange(settings.copy(lakeFaceClarity = it).clamped()) }
                         Text(stringResource(R.string.lake_scene_hint), color = BmTextMuted, fontSize = 10.sp)
                     }
                 }
@@ -840,30 +795,6 @@ private fun TransitionDurationSlider(
                 inactiveTrackColor = BmTextMuted.copy(alpha = 0.18f),
             ),
         )
-    }
-}
-
-@Composable
-private fun SceneMoodCard(
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier,
-    active: Boolean,
-    testTag: String,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = modifier
-            .defaultMinSize(minHeight = 84.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (active) BmAccent.copy(alpha = 0.18f) else BmSurfaceStrong)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-            .testTag(testTag),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text(title, color = if (active) BmAccent else BmText, fontSize = 12.sp)
-        Text(subtitle, color = BmTextMuted, fontSize = 10.sp, lineHeight = 12.sp)
     }
 }
 

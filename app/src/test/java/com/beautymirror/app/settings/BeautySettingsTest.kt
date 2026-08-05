@@ -17,6 +17,13 @@ class BeautySettingsTest {
             lakeCameraBlend = 4f,
             lakeDeformation = -3f,
             lakeSwirl = 2f,
+            lakeSettledWater = 3f,
+            lakeSettledCamera = -1f,
+            lakeRippleRegions = 2f,
+            lakeRippleSpeed = -2f,
+            lakeWaveDetail = 4f,
+            lakeSpecular = -3f,
+            lakeSkyBlue = 2f,
             revealDurationSeconds = 99f,
         ).clamped()
         assertThat(s.globalStrength).isEqualTo(1f)
@@ -29,6 +36,13 @@ class BeautySettingsTest {
         assertThat(s.lakeCameraBlend).isEqualTo(1f)
         assertThat(s.lakeDeformation).isEqualTo(0f)
         assertThat(s.lakeSwirl).isEqualTo(1f)
+        assertThat(s.lakeSettledWater).isEqualTo(1f)
+        assertThat(s.lakeSettledCamera).isEqualTo(0f)
+        assertThat(s.lakeRippleRegions).isEqualTo(1f)
+        assertThat(s.lakeRippleSpeed).isEqualTo(0f)
+        assertThat(s.lakeWaveDetail).isEqualTo(1f)
+        assertThat(s.lakeSpecular).isEqualTo(0f)
+        assertThat(s.lakeSkyBlue).isEqualTo(1f)
         assertThat(s.revealDurationSeconds).isEqualTo(30f)
     }
 
