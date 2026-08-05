@@ -88,7 +88,7 @@
     <string name="scene_mood_fluid_sub">Mouvement, déformation et vortex renforcés</string>
     <string name="scene_mood_gallery">Galerie</string>
     <string name="scene_mood_gallery_sub">Fusion caméra lisible avec vortex d’arrivée poli</string>
-    <string name="lake_scene_hint">Sans visiteur, l’écran est un étang bleu ciel vivant. Quand un visage apparaît, la caméra fusionne avec l’eau. Utilisez Eau finale / Caméra finale pour le mélange après la révélation ; Régions d’ondulation règle le nombre de centres d’ondulation.</string>
+    <string name="lake_scene_hint">Sans visiteur l’écran est un étang bleu ciel vivant. Un visage merge la caméra dans l’eau. Eau / caméra stabilisées fixent le mix final ; soleil, chaleur, saturation, écume et nuages façonnent le rendu.</string>
     <string name="lake_settle_section">Mélange final</string>
     <string name="lake_motion_section">Mouvement</string>
     <string name="lake_look_section">Apparence</string>
@@ -105,6 +105,11 @@
     <string name="lake_ripple_speed">Vitesse des ondulations</string>
     <string name="lake_wave_detail">Détail des vagues</string>
     <string name="lake_specular">Brillance spéculaire</string>
+    <string name="lake_sunlight">Ensoleillement</string>
+    <string name="lake_water_warmth">Chaleur de l’eau</string>
+    <string name="lake_saturation">Saturation des couleurs</string>
+    <string name="lake_foam">Écume / crêtes</string>
+    <string name="lake_clouds">Nuages</string>
     <string name="lake_sky_blue">Bleu ciel</string>
 
     <string name="skin_smoothing">Lissage de la peau</string>

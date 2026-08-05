@@ -39,6 +39,11 @@ class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     private val uWaveDetail = program.uniformLocation("uWaveDetail")
     private val uSpecular = program.uniformLocation("uSpecular")
     private val uSkyBlue = program.uniformLocation("uSkyBlue")
+    private val uSunlight = program.uniformLocation("uSunlight")
+    private val uWaterWarmth = program.uniformLocation("uWaterWarmth")
+    private val uSaturation = program.uniformLocation("uSaturation")
+    private val uFoam = program.uniformLocation("uFoam")
+    private val uClouds = program.uniformLocation("uClouds")
     private val uQuality = program.uniformLocation("uQuality")
     private val uEnabled = program.uniformLocation("uEnabled")
 
@@ -66,6 +71,11 @@ class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     var waveDetail: Float = 0.55f
     var specular: Float = 0.50f
     var skyBlue: Float = 0.78f
+    var sunlight: Float = 0.70f
+    var waterWarmth: Float = 0.22f
+    var saturation: Float = 0.78f
+    var foam: Float = 0.55f
+    var clouds: Float = 0.55f
     var quality: Float = 1f
 
     override fun resize(width: Int, height: Int) {
@@ -98,6 +108,11 @@ class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
         GLES30.glUniform1f(uWaveDetail, waveDetail.coerceIn(0f, 1f))
         GLES30.glUniform1f(uSpecular, specular.coerceIn(0f, 1f))
         GLES30.glUniform1f(uSkyBlue, skyBlue.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uSunlight, sunlight.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uWaterWarmth, waterWarmth.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uSaturation, saturation.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uFoam, foam.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uClouds, clouds.coerceIn(0f, 1f))
         GLES30.glUniform1f(uQuality, quality.coerceIn(0f, 1f))
         GLES30.glUniform1f(uEnabled, if (enabled && intensity > 0.001f) 1f else 0f)
         mesh.draw()

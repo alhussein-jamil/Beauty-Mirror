@@ -88,7 +88,7 @@
     <string name="scene_mood_fluid_sub">Stronger movement, deformation and vortex</string>
     <string name="scene_mood_gallery">Gallery</string>
     <string name="scene_mood_gallery_sub">Clear camera merge with a polished arrival swirl</string>
-    <string name="lake_scene_hint">Without a visitor the screen is a living sky-blue pond. When a face appears the camera merges into the water. Use Settled water / Settled camera to choose the final mix; Ripple regions controls how many independent ripple centers are active.</string>
+    <string name="lake_scene_hint">Without a visitor the screen is a living sky-blue pond. When a face appears the camera merges into the water. Settled water / Settled camera set the final mix; Sunlight, warmth, saturation, foam, and clouds shape the look.</string>
     <string name="lake_settle_section">Settled mix</string>
     <string name="lake_motion_section">Movement</string>
     <string name="lake_look_section">Look</string>
@@ -105,6 +105,11 @@
     <string name="lake_ripple_speed">Ripple speed</string>
     <string name="lake_wave_detail">Wave detail</string>
     <string name="lake_specular">Specular gloss</string>
+    <string name="lake_sunlight">Sunlight</string>
+    <string name="lake_water_warmth">Water warmth</string>
+    <string name="lake_saturation">Color saturation</string>
+    <string name="lake_foam">Foam / crests</string>
+    <string name="lake_clouds">Clouds</string>
     <string name="lake_sky_blue">Sky blue</string>
 
     <string name="skin_smoothing">Skin smoothing</string>

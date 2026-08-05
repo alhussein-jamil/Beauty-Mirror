@@ -467,6 +467,11 @@ class RenderGraph(context: Context) {
         lakePass.waveDetail = s.lakeWaveDetail
         lakePass.specular = s.lakeSpecular
         lakePass.skyBlue = s.lakeSkyBlue
+        lakePass.sunlight = s.lakeSunlight
+        lakePass.waterWarmth = s.lakeWaterWarmth
+        lakePass.saturation = s.lakeSaturation
+        lakePass.foam = s.lakeFoam
+        lakePass.clouds = s.lakeClouds
         lakePass.quality = if (s.qualityLevel == QualityLevel.PERFORMANCE) {
             0.18f
         } else {

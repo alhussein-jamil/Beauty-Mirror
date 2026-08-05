@@ -34,6 +34,11 @@ class SettingsRepository(private val context: Context) {
     private val lakeWaveDetailKey = floatPreferencesKey("lake_wave_detail")
     private val lakeSpecularKey = floatPreferencesKey("lake_specular")
     private val lakeSkyBlueKey = floatPreferencesKey("lake_sky_blue")
+    private val lakeSunlightKey = floatPreferencesKey("lake_sunlight")
+    private val lakeWaterWarmthKey = floatPreferencesKey("lake_water_warmth")
+    private val lakeSaturationKey = floatPreferencesKey("lake_saturation")
+    private val lakeFoamKey = floatPreferencesKey("lake_foam")
+    private val lakeCloudsKey = floatPreferencesKey("lake_clouds")
     private val revealDurationKey = floatPreferencesKey("reveal_duration_seconds")
     private val smoothKey = floatPreferencesKey("smooth")
     private val smoothRadiusKey = floatPreferencesKey("smooth_radius")
@@ -78,7 +83,7 @@ class SettingsRepository(private val context: Context) {
             ReflectionScene.valueOf(prefs[reflectionSceneKey] ?: ReflectionScene.DARK_LAKE.name)
         }.getOrDefault(ReflectionScene.DARK_LAKE)
         val effectsSchema = prefs[effectsSchemaKey] ?: 1
-        // Schema 15: curator settled water/camera mix, ripple region count, sky-blue lift; no sun disk.
+        // Schema 15: settled mix / ripple / sky-blue. Schema 16: sunlight, warmth, sat, foam, clouds.
         val lakeIntensity = if (effectsSchema < 15) 0.92f else (prefs[lakeIntensityKey] ?: 0.92f)
         val lakeMotion = if (effectsSchema < 15) 0.55f else (prefs[lakeMotionKey] ?: 0.55f)
         val lakeDarkness = if (effectsSchema < 15) 0.08f else (prefs[lakeDarknessKey] ?: 0.08f)
@@ -93,6 +98,11 @@ class SettingsRepository(private val context: Context) {
         val lakeWaveDetail = if (effectsSchema < 15) 0.55f else (prefs[lakeWaveDetailKey] ?: 0.55f)
         val lakeSpecular = if (effectsSchema < 15) 0.50f else (prefs[lakeSpecularKey] ?: 0.50f)
         val lakeSkyBlue = if (effectsSchema < 15) 0.78f else (prefs[lakeSkyBlueKey] ?: 0.78f)
+        val lakeSunlight = if (effectsSchema < 16) 0.70f else (prefs[lakeSunlightKey] ?: 0.70f)
+        val lakeWaterWarmth = if (effectsSchema < 16) 0.22f else (prefs[lakeWaterWarmthKey] ?: 0.22f)
+        val lakeSaturation = if (effectsSchema < 16) 0.78f else (prefs[lakeSaturationKey] ?: 0.78f)
+        val lakeFoam = if (effectsSchema < 16) 0.55f else (prefs[lakeFoamKey] ?: 0.55f)
+        val lakeClouds = if (effectsSchema < 16) 0.55f else (prefs[lakeCloudsKey] ?: 0.55f)
         val revealDurationSeconds = if (effectsSchema < 10) {
             10f
         } else {
@@ -123,6 +133,11 @@ class SettingsRepository(private val context: Context) {
                         lakeWaveDetail = lakeWaveDetail,
                         lakeSpecular = lakeSpecular,
                         lakeSkyBlue = lakeSkyBlue,
+                        lakeSunlight = lakeSunlight,
+                        lakeWaterWarmth = lakeWaterWarmth,
+                        lakeSaturation = lakeSaturation,
+                        lakeFoam = lakeFoam,
+                        lakeClouds = lakeClouds,
                         revealDurationSeconds = revealDurationSeconds,
                     ).clamped()
                 } else {
@@ -179,6 +194,11 @@ class SettingsRepository(private val context: Context) {
                         lakeWaveDetail = lakeWaveDetail,
                         lakeSpecular = lakeSpecular,
                         lakeSkyBlue = lakeSkyBlue,
+                        lakeSunlight = lakeSunlight,
+                        lakeWaterWarmth = lakeWaterWarmth,
+                        lakeSaturation = lakeSaturation,
+                        lakeFoam = lakeFoam,
+                        lakeClouds = lakeClouds,
                         revealDurationSeconds = revealDurationSeconds,
                     ).clamped()
                 }
@@ -206,6 +226,11 @@ class SettingsRepository(private val context: Context) {
                 lakeWaveDetail = lakeWaveDetail,
                 lakeSpecular = lakeSpecular,
                 lakeSkyBlue = lakeSkyBlue,
+                lakeSunlight = lakeSunlight,
+                lakeWaterWarmth = lakeWaterWarmth,
+                lakeSaturation = lakeSaturation,
+                lakeFoam = lakeFoam,
+                lakeClouds = lakeClouds,
                 revealDurationSeconds = revealDurationSeconds,
             )
         }
@@ -234,6 +259,11 @@ class SettingsRepository(private val context: Context) {
             prefs[lakeWaveDetailKey] = settings.lakeWaveDetail
             prefs[lakeSpecularKey] = settings.lakeSpecular
             prefs[lakeSkyBlueKey] = settings.lakeSkyBlue
+            prefs[lakeSunlightKey] = settings.lakeSunlight
+            prefs[lakeWaterWarmthKey] = settings.lakeWaterWarmth
+            prefs[lakeSaturationKey] = settings.lakeSaturation
+            prefs[lakeFoamKey] = settings.lakeFoam
+            prefs[lakeCloudsKey] = settings.lakeClouds
             prefs[revealDurationKey] = settings.revealDurationSeconds
             prefs[smoothKey] = settings.smoothingStrength
             prefs[smoothRadiusKey] = settings.smoothingRadius
@@ -271,6 +301,6 @@ class SettingsRepository(private val context: Context) {
     }
 
     companion object {
-        private const val CURRENT_EFFECTS_SCHEMA = 15
+        private const val CURRENT_EFFECTS_SCHEMA = 16
     }
 }

@@ -24,6 +24,11 @@ class BeautySettingsTest {
             lakeWaveDetail = 4f,
             lakeSpecular = -3f,
             lakeSkyBlue = 2f,
+            lakeSunlight = -1f,
+            lakeWaterWarmth = 4f,
+            lakeSaturation = -2f,
+            lakeFoam = 3f,
+            lakeClouds = -4f,
             revealDurationSeconds = 99f,
         ).clamped()
         assertThat(s.globalStrength).isEqualTo(1f)
@@ -43,6 +48,11 @@ class BeautySettingsTest {
         assertThat(s.lakeWaveDetail).isEqualTo(1f)
         assertThat(s.lakeSpecular).isEqualTo(0f)
         assertThat(s.lakeSkyBlue).isEqualTo(1f)
+        assertThat(s.lakeSunlight).isEqualTo(0f)
+        assertThat(s.lakeWaterWarmth).isEqualTo(1f)
+        assertThat(s.lakeSaturation).isEqualTo(0f)
+        assertThat(s.lakeFoam).isEqualTo(1f)
+        assertThat(s.lakeClouds).isEqualTo(0f)
         assertThat(s.revealDurationSeconds).isEqualTo(30f)
     }
 
