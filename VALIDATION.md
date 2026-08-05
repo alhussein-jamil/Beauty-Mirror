@@ -1,39 +1,40 @@
 # Validation record
 
-Revision 4.0.0 prepared on 2026-08-04.
+Revision 5.0.0 prepared on 2026-08-05.
 
 ## Completed in the repair environment
 
 - Ran `tools/static-checks.sh`, including model checksum, shader inventory, scoped Compose import
   guards, reserved GLSL identifiers and Kotlin-pass/GLSL uniform parity.
-- Parsed every Android XML string resource and validated all shell scripts with `bash -n`.
-- Dry-ran `make workshop` through build, APK copy, install and exhibition launch commands.
-- Compiled the pure-Kotlin settings/tracking core with `kotlinc`.
-- Executed a reveal/session smoke test: visible progress after two seconds, completion at ten
-  seconds and a two-result direct visitor hand-off restart.
-- Verified the 3–30 second setting is clamped, persisted, migrated and preserved across presets.
-- Added JVM regression tests for reveal timing, brief detector misses, sustained absence, ordinary
-  visitor movement and direct tracking hand-off.
-- Verified the pond shader stays one pass, clamps refraction, removes extra taps/particles in
-  Performance mode and contains no reserved GLSL ES identifiers.
+- Parsed every Android XML resource and verified English/French string-key parity.
+- Checked shell scripts and Makefile installation targets.
+- Compiled the pure-Kotlin tracking/reveal/session core with `kotlinc`.
+- Executed a reveal/session simulation: completion at ten seconds, explicit restart, sustained
+  absence rearm, and two-result direct tracking hand-off restart.
+- Updated Robolectric default-setting assertions for the new workshop pond schema.
+- Verified the 3–30 second setting is clamped, persisted and migrated with a 10 second default.
+- Verified the pond shader contains no reserved GLSL ES identifiers, has matching uniforms, clamps
+  face refraction, avoids camera sampling in its idle path, and removes optional work at low quality.
+- Verified the final archive with `unzip -t`.
 
 ## Performance design validated in source
 
-- The renderer budgets against 33.3 ms and evaluates average/p95 frame time, slow-frame ratio,
-  camera cadence and analysis cadence every 250 ms.
-- Beauty work grows with visitor reveal, so expensive geometry and feature passes are skipped during
-  the earliest part of the transition when their visual contribution would be negligible.
-- Landmark masks are reused between analysis results and refreshed less often under pressure.
-- The pond uses three texture taps only when quality permits; Performance mode uses one tap and
-  removes the second ambient ripple, particles, geometry, detail restoration and feature styling.
-- PERFORMANCE uses 480p rendering, 128px masks, 6 Hz analysis and two skin samples while retaining
+- No-face mode renders one procedural pond pass and performs no landmark-mask rendering.
+- Early visitor reveal renders and blurs only the face-oval mask; seven auxiliary masks are deferred
+  until beautification passes become visible.
+- Landmark masks are cached between analysis updates and refreshed less frequently under pressure.
+- Low/Performance pond quality removes one ripple source, a noise octave, particles and the second
+  face sample while keeping the face-readable installation behavior.
+- The existing renderer protection evaluates average/p95 frame time, slow-frame ratio, camera
+  cadence and analysis cadence against the 33.3 ms budget.
+- PERFORMANCE uses 480p rendering, 128 px masks, 6 Hz analysis and two skin samples while retaining
   core skin, under-eye and face-lighting correction.
 
 ## Not executable in the repair environment
 
 The environment cannot download the Gradle distribution/Maven dependencies and has no Android SDK,
-connected device or camera. Full Android compilation and physical camera validation remain required
-on the target machine:
+connected device or camera. Full Android compilation and physical camera/art-direction validation
+remain required on the target machine:
 
 ```bash
 make doctor

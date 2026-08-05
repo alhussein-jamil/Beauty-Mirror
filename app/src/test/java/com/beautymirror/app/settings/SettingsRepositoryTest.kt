@@ -19,10 +19,10 @@ class SettingsRepositoryTest {
         assertThat(loaded.preset).isEqualTo(BeautyPreset.STAGE)
         assertThat(loaded.effectsEnabled).isTrue()
         assertThat(loaded.reflectionScene).isEqualTo(ReflectionScene.DARK_LAKE)
-        assertThat(loaded.lakeIntensity).isWithin(1e-3f).of(0.82f)
-        assertThat(loaded.lakeMotion).isWithin(1e-3f).of(0.34f)
-        assertThat(loaded.lakeDarkness).isWithin(1e-3f).of(0.62f)
-        assertThat(loaded.lakeFaceClarity).isWithin(1e-3f).of(0.86f)
+        assertThat(loaded.lakeIntensity).isWithin(1e-3f).of(0.90f)
+        assertThat(loaded.lakeMotion).isWithin(1e-3f).of(0.30f)
+        assertThat(loaded.lakeDarkness).isWithin(1e-3f).of(0.50f)
+        assertThat(loaded.lakeFaceClarity).isWithin(1e-3f).of(0.96f)
         assertThat(loaded.revealDurationSeconds).isWithin(1e-3f).of(10f)
     }
 

@@ -1,5 +1,18 @@
 # Beauty Mirror
 
+
+## Workshop pond experience
+
+The default exhibition scene is now an animated pond screensaver. With no face present, no camera
+background is displayed. When a visitor approaches, the tracked face oval is softly isolated and
+inserted into the pond while beautification accumulates over a configurable 3–30 second reveal
+(default 10 seconds). Run it with:
+
+```bash
+make workshop
+```
+
+
 A fully local Android beauty mirror designed for a live exhibition. CameraX feeds a custom OpenGL ES 3.0 renderer and MediaPipe Face Landmarker supplies a stabilized face mesh plus its canonical 3-D facial transformation matrix when available. The GPU pipeline improves skin, under-eyes, eyes, brows, lips, lighting and facial shape while a permanent 30 FPS protection loop removes optional work before motion becomes visibly choppy.
 
 ## Current scope
@@ -102,8 +115,10 @@ Generated debug APK:
 releases/beauty-mirror-debug.apk
 ```
 
-Inside the app, use the eye icon to enter a clean full-screen mirror. The panel,
-buttons, diagnostics, status bar, and navigation bar disappear; tap the image to restore them.
+Inside the app, use the eye icon to enter a clean full-screen artwork. The panel,
+buttons, diagnostics, status bar, and navigation bar disappear. In normal mode, tap the image to
+restore them. In workshop/exhibition mode, visitor taps are ignored; a curator long-press restores
+the controls.
 
 Other useful targets:
 
@@ -178,7 +193,7 @@ Detailed invariants are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 - Mask textures are refreshed only when a new tracked face result or runtime quality profile arrives.
 - 30 FPS protection first interpolates samples, mask cadence and optional effect strength, then changes resolution only after sustained overload. PERFORMANCE skips optional geometry, detail restoration and feature styling while retaining core skin, under-eye and lighting correction.
 - A low camera cadence with inexpensive rendering is classified as camera-limited instead of triggering destructive quality shedding.
-- The dark-lake pass runs after face correction, preserves a tracked face window, and reduces its optional taps under load.
+- The workshop pond pass runs after face correction. Idle output is fully procedural; with a visitor, only the softly feathered landmark face mask samples the camera, and optional pond taps are removed under load.
 - Camera buffers are configured to CameraX's requested resolution before the surface is provided.
 - The camera input pass performs a centered aspect-fill crop using CameraX rotation metadata instead of stretching the image.
 - MediaPipe owns an accepted `ImageProxy` until its asynchronous callback completes.

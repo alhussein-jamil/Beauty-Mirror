@@ -1,5 +1,24 @@
 # Changelog
 
+## 5.0.0
+
+- Replaced the camera-backed idle view with a fully procedural animated pond screensaver.
+- Isolated the tracked face with the real blurred landmark mask and composited only that face into
+  the pond; the room and camera background are no longer visible around the visitor.
+- Reduced water over the face to a restrained 11%→2.5% veil with sub-pixel refraction, so the
+  reflection remains readable from the first moment and becomes fully clear while looking.
+- Preserved the parameterized 3–30 second reveal (10 seconds by default) and continued scaling the
+  actual beauty graph over that duration.
+- Kept automatic restart on sustained departure, direct tracker hand-off, new visitor arrival and
+  settings dismissal.
+- Added face-only mask rendering during early reveal, avoiding the seven unnecessary auxiliary
+  masks until beauty passes actually need them.
+- Reworked the pond art direction from pool-like caustics to grey-green silt, peat shadows, broad
+  sky/workshop reflections, sparse sediment and slow independent drop rings.
+- Simplified workshop controls around Pond / Marsh / Clear Reflection moods, transition duration,
+  face clarity and surface movement.
+- Replaced large exhibition overlays with quieter ripple invitation and compact reveal progress.
+
 ## 4.0.0
 
 - Replaced the synthetic lake treatment with a workshop-directed pond: murky slate/peat water,

@@ -84,6 +84,7 @@ class RenderGraph(context: Context) {
     private var lastMaskTrackingTimestampNs = Long.MIN_VALUE
     private var lastMaskQuality: QualityLevel? = null
     private var lastMaskRefreshTimestampNs = Long.MIN_VALUE
+    private var lastMaskFaceOnly = false
     private var lakeMix = 0f
     private val visitorReveal = VisitorRevealController()
     private val visitorSessionDetector = VisitorSessionDetector()
@@ -164,6 +165,7 @@ class RenderGraph(context: Context) {
             lastMaskTrackingTimestampNs = Long.MIN_VALUE
             lastMaskRefreshTimestampNs = Long.MIN_VALUE
             lastMaskQuality = null
+            lastMaskFaceOnly = false
         }
     }
 
@@ -191,6 +193,7 @@ class RenderGraph(context: Context) {
         val tr = tracking
         val perf = performanceState
         val comparing = s.showBeforeAfter || compareHold
+        val lakeTarget = if (s.reflectionScene == ReflectionScene.DARK_LAKE && !comparing) 1f else 0f
 
         visitorReveal.setDuration(s.revealDurationSeconds)
         val newVisitor = visitorSessionDetector.update(tr, frameDt)
@@ -291,47 +294,61 @@ class RenderGraph(context: Context) {
         }
 
         val maskStart = SystemClock.elapsedRealtimeNanos()
-        if (runAny) {
+        // Pond mode needs the real landmark silhouette immediately, even before the timed beauty
+        // graph becomes strong enough to run. Render only that one mask during the first moments;
+        // upgrade to the full mask set when beautification passes activate.
+        val needPondFaceMask = lakeTarget > 0f && tr.effectOpacity > 0.01f
+        val needMasks = runAny || needPondFaceMask
+        val faceOnlyMask = needPondFaceMask && !runAny
+        if (needMasks) {
             // Landmarks normally update at 8–20 Hz while the camera renders at ~30 FPS. Reusing
-            // masks until a new tracking result arrives avoids re-drawing and blurring eight mask
-            // textures on every camera frame — the largest performance win in the pipeline.
+            // masks until a new tracking result arrives avoids re-drawing and blurring textures on
+            // every camera frame. The idle pond never draws masks at all.
             val maskIntervalNs = perf.maskRefreshIntervalMs * 1_000_000L
             val trackingAdvanced = tr.timestampNs != lastMaskTrackingTimestampNs
             val intervalElapsed = lastMaskRefreshTimestampNs == Long.MIN_VALUE ||
                 tr.timestampNs - lastMaskRefreshTimestampNs >= maskIntervalNs
             val refreshMasks = !masksValid ||
                 lastMaskQuality != s.qualityLevel ||
+                lastMaskFaceOnly != faceOnlyMask ||
                 (trackingAdvanced && intervalElapsed)
             if (refreshMasks) {
                 val polygons = maskGenerator.generate(tr)
                 val faceW = tr.bounds.width.coerceAtLeast(0.15f)
                 maskRenderer.render(
                     polygons = polygons,
-                    opacity = opacity,
+                    // Reveal gates effect strength, not silhouette visibility. Keep the mask
+                    // itself at full opacity; tracking/effect opacity is applied once by each pass.
+                    opacity = 1f,
                     faceWidthNorm = faceW,
                     mesh = mesh,
                     secondBlur = s.qualityLevel.secondMaskBlur && perf.optionalScale > 0.82f,
+                    faceOnly = faceOnlyMask,
                 )
                 masksValid = true
                 lastMaskTrackingTimestampNs = tr.timestampNs
                 lastMaskRefreshTimestampNs = tr.timestampNs
                 lastMaskQuality = s.qualityLevel
+                lastMaskFaceOnly = faceOnlyMask
             }
-            skinPass.skinMask = maskRenderer.skinMask
-            skinPass.detailMask = maskRenderer.detailMask
-            underEyePass.underEyeMask = maskRenderer.underEyeMask
-            lightingPass.faceMask = maskRenderer.skinMask
-            colorPass.faceMask = maskRenderer.skinMask
-            detailPass.eyeMask = maskRenderer.eyeMask
-            detailPass.detailMask = maskRenderer.detailMask
-            warpPass.faceMask = maskRenderer.faceMask
-            featurePass.eyeMask = maskRenderer.eyeMask
-            featurePass.browMask = maskRenderer.browMask
-            featurePass.lipMask = maskRenderer.lipMask
-            featurePass.mouthMask = maskRenderer.mouthMask
-            featurePass.faceMask = maskRenderer.faceMask
+            if (runAny) {
+                skinPass.skinMask = maskRenderer.skinMask
+                skinPass.detailMask = maskRenderer.detailMask
+                underEyePass.underEyeMask = maskRenderer.underEyeMask
+                lightingPass.faceMask = maskRenderer.skinMask
+                colorPass.faceMask = maskRenderer.skinMask
+                detailPass.eyeMask = maskRenderer.eyeMask
+                detailPass.detailMask = maskRenderer.detailMask
+                warpPass.faceMask = maskRenderer.faceMask
+                featurePass.eyeMask = maskRenderer.eyeMask
+                featurePass.browMask = maskRenderer.browMask
+                featurePass.lipMask = maskRenderer.lipMask
+                featurePass.mouthMask = maskRenderer.mouthMask
+                featurePass.faceMask = maskRenderer.faceMask
+            }
         } else {
             masksValid = false
+            lastMaskFaceOnly = false
         }
         timing.recordPass("masks", elapsedMs(maskStart))
 
@@ -401,7 +418,6 @@ class RenderGraph(context: Context) {
         compositePass.beforeAfter = if (comparing) 1f else 0f
         compositePass.dimAmount = settingsInterpolator.dimAmount()
 
-        val lakeTarget = if (s.reflectionScene == ReflectionScene.DARK_LAKE && !comparing) 1f else 0f
         val lakeAlphaAt30 = if (lakeTarget > lakeMix) 0.10f else 0.14f
         val lakeAlpha = 1f - (1f - lakeAlphaAt30).pow(frameDt * 30f)
         lakeMix += (lakeTarget - lakeMix) * lakeAlpha
@@ -423,7 +439,7 @@ class RenderGraph(context: Context) {
                 }
                 cachedLakeFaceCenterX = (minX + maxX) * 0.5f
                 cachedLakeFaceCenterY = (minY + maxY) * 0.5f
-                // Slight pad so the still-face ellipse covers hairline/jaw under motion.
+                // Slight pad: the ellipse is only a cheap shader gate around the real face mask.
                 cachedLakeFaceWidth = ((maxX - minX) * 1.06f).coerceIn(0.12f, 0.85f)
                 cachedLakeFaceHeight = ((maxY - minY) * 1.08f).coerceIn(0.16f, 0.95f)
             }
@@ -434,13 +450,14 @@ class RenderGraph(context: Context) {
         lakePass.faceCenterY = cachedLakeFaceCenterY
         lakePass.faceWidth = cachedLakeFaceWidth
         lakePass.faceHeight = cachedLakeFaceHeight
+        lakePass.faceMask = if (needPondFaceMask && masksValid) maskRenderer.faceMask else null
         lakePass.facePresence = tr.effectOpacity
         lakePass.visitorReveal = reveal
         lakePass.timeSeconds = (SystemClock.elapsedRealtime() % 3_600_000L) / 1_000f
         lakePass.intensity = s.lakeIntensity * lakeMix
         lakePass.motion = s.lakeMotion
         lakePass.darkness = s.lakeDarkness
-        // 1.0 = still face (no puddle warp). Product default keeps the subject readable.
+        // 1.0 keeps the isolated face fully readable; shader water veil remains deliberately tiny.
         lakePass.faceClarity = s.lakeFaceClarity
         lakePass.quality = if (s.qualityLevel == QualityLevel.PERFORMANCE) {
             0.18f

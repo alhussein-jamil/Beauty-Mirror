@@ -88,23 +88,36 @@ class MaskTextureRenderer(
         faceWidthNorm: Float,
         mesh: GlMesh,
         secondBlur: Boolean = true,
+        faceOnly: Boolean = false,
     ) {
         if (width <= 0 || height <= 0) return
         val feather = (faceWidthNorm * 0.04f).coerceIn(0.008f, 0.05f)
         clear(faceFbo)
-        clear(skinFbo)
-        clear(underEyeFbo)
-        clear(eyeFbo)
-        clear(browFbo)
-        clear(lipFbo)
-        clear(mouthFbo)
-        clear(detailFbo)
+        if (!faceOnly) {
+            clear(skinFbo)
+            clear(underEyeFbo)
+            clear(eyeFbo)
+            clear(browFbo)
+            clear(lipFbo)
+            clear(mouthFbo)
+            clear(detailFbo)
+        }
         if (polygons == null || opacity <= 0.01f) return
 
         GLES30.glEnable(GLES30.GL_BLEND)
         GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA)
 
         drawPolygon(faceFbo, polygons.faceOval, 1f, 1f, 1f, opacity, feather)
+        if (faceOnly) {
+            GLES30.glDisable(GLES30.GL_BLEND)
+            val faceBlurRadius = (faceWidthNorm * 8f).coerceIn(1.2f, 3.5f)
+            blur.blur(faceMask, faceFbo, mesh, faceBlurRadius * 0.85f)
+            if (secondBlur && faceWidthNorm > 0.28f) {
+                blur.blur(faceMask, faceFbo, mesh, faceBlurRadius * 0.46f)
+            }
+            return
+        }
+
         drawPolygon(skinFbo, polygons.skin, 1f, 1f, 1f, opacity, feather)
         val exclusions = exclusionGenerator.exclusions(polygons)
         for (ex in exclusions) {

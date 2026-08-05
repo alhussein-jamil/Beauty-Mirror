@@ -80,15 +80,15 @@
     <string name="action_stage_ready">Stage ready</string>
     <string name="action_reflection_plus">Reflection++</string>
     <string name="scene_moods">Scene moods</string>
-    <string name="scene_mood_still_well">Still well</string>
-    <string name="scene_mood_still_well_sub">Dark pool, soft hush, face as mirror</string>
+    <string name="scene_mood_still_well">Workshop pond</string>
+    <string name="scene_mood_still_well_sub">Grey-green water, calm living surface</string>
     <string name="scene_mood_marsh">Marsh</string>
-    <string name="scene_mood_marsh_sub">Deeper peat, stronger breath</string>
-    <string name="scene_mood_ripple">Soft ripple</string>
-    <string name="scene_mood_ripple_sub">Livelier surface rings</string>
-    <string name="scene_mood_reveal">Reveal++</string>
-    <string name="scene_mood_reveal_sub">Arrival crest, then clear reflection</string>
-    <string name="lake_scene_hint">The pond remains visible at all times. Closing the editor starts a new timed face transformation; the same sequence restarts when the next visitor appears.</string>
+    <string name="scene_mood_marsh_sub">Darker peat and slower reflections</string>
+    <string name="scene_mood_ripple">Clear reflection</string>
+    <string name="scene_mood_ripple_sub">Face-first mirror, very light water veil</string>
+    <string name="scene_mood_reveal">Exhibition</string>
+    <string name="scene_mood_reveal_sub">Balanced default for continuous visitors</string>
+    <string name="lake_scene_hint">Without a face, the pond is an animated screensaver. With a visitor, only the face is inserted into the water and the transformation restarts automatically.</string>
 
     <string name="skin_smoothing">Skin smoothing</string>
     <string name="smoothing_radius">Smoothing radius</string>
@@ -144,19 +144,19 @@
     <string name="lake_intensity">Water presence</string>
     <string name="lake_motion">Surface movement</string>
     <string name="lake_darkness">Water depth</string>
-    <string name="lake_face_clarity">Keep face still</string>
+    <string name="lake_face_clarity">Reflection clarity</string>
     <string name="performance_interpolation">Adaptive processing pressure: %1$d%%</string>
 
     <string name="transformation_duration">Transformation duration</string>
     <string name="seconds_value">%1$.0f s</string>
-    <string name="pond_keep_looking">Stay with your reflection</string>
-    <string name="pond_reveal_remaining">The face settles in %1$.1f seconds</string>
+    <string name="pond_keep_looking">Your reflection is settling</string>
+    <string name="pond_reveal_remaining">Keep looking · %1$.1f s</string>
     <string name="pond_reflection_title">Living pond reflection</string>
-    <string name="pond_reflection_subtitle">Murky slate water, restrained ripples and a face that gradually becomes clearer.</string>
+    <string name="pond_reflection_subtitle">Animated pond while idle; a clear isolated face appears when a visitor approaches.</string>
     <string name="pond_duration_summary">Transformation · %1$.0f s</string>
     <string name="pond_new_face_restart">Restarts for every visitor</string>
 
     <string name="return_to_pond">Return to pond</string>
-    <string name="pond_waiting_title">The water is waiting</string>
-    <string name="pond_waiting_subtitle">Step closer and meet your reflection.</string>
+    <string name="pond_waiting_title">The pond is alive</string>
+    <string name="pond_waiting_subtitle">Approach the water to reveal your reflection.</string>
 </resources>

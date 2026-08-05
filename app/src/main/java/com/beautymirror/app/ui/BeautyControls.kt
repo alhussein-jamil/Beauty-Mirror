@@ -442,16 +442,16 @@ fun BeautyControls(
                                 title = stringResource(R.string.scene_mood_still_well),
                                 subtitle = stringResource(R.string.scene_mood_still_well_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeMotion <= 0.40f && settings.lakeDarkness >= 0.68f,
+                                active = settings.lakeMotion in 0.24f..0.36f && settings.lakeDarkness in 0.42f..0.58f,
                                 testTag = "mood_still_well",
-                            ) { applyLakeMood(0.80f, 0.22f, 0.68f, 0.92f) }
+                            ) { applyLakeMood(0.90f, 0.30f, 0.50f, 0.96f) }
                             SceneMoodCard(
                                 title = stringResource(R.string.scene_mood_marsh),
                                 subtitle = stringResource(R.string.scene_mood_marsh_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeMotion in 0.40f..0.65f && settings.lakeDarkness >= 0.70f,
+                                active = settings.lakeDarkness >= 0.60f,
                                 testTag = "mood_marsh",
-                            ) { applyLakeMood(0.86f, 0.36f, 0.66f, 0.86f) }
+                            ) { applyLakeMood(0.92f, 0.22f, 0.68f, 0.95f) }
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -461,16 +461,16 @@ fun BeautyControls(
                                 title = stringResource(R.string.scene_mood_ripple),
                                 subtitle = stringResource(R.string.scene_mood_ripple_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeMotion >= 0.70f,
+                                active = settings.lakeFaceClarity >= 0.985f && settings.lakeDarkness <= 0.42f,
                                 testTag = "mood_ripple",
-                            ) { applyLakeMood(0.88f, 0.50f, 0.58f, 0.82f) }
+                            ) { applyLakeMood(0.76f, 0.20f, 0.36f, 1.0f) }
                             SceneMoodCard(
                                 title = stringResource(R.string.scene_mood_reveal),
                                 subtitle = stringResource(R.string.scene_mood_reveal_sub),
                                 modifier = Modifier.weight(1f),
-                                active = settings.lakeIntensity >= 0.80f && settings.lakeFaceClarity >= 0.90f,
+                                active = settings.lakeIntensity in 0.84f..0.96f && settings.lakeFaceClarity in 0.94f..0.99f,
                                 testTag = "mood_reveal",
-                            ) { applyLakeMood(0.92f, 0.40f, 0.60f, 0.88f) }
+                            ) { applyLakeMood(0.88f, 0.28f, 0.46f, 0.98f) }
                         }
                         SettingSlider(stringResource(R.string.lake_intensity), settings.lakeIntensity, "slider_lake_intensity") { onChange(settings.copy(lakeIntensity = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_motion), settings.lakeMotion, "slider_lake_motion") { onChange(settings.copy(lakeMotion = it).clamped()) }
@@ -681,38 +681,78 @@ private fun PondSceneCard(settings: BeautySettings) {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(96.dp)
+                .height(104.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFF555D59)),
+                .background(Color(0xFF535B56)),
         ) {
-            val center = Offset(size.width * 0.53f, size.height * 0.50f)
-            drawOval(
-                color = Color(0x55434B46),
-                topLeft = Offset(size.width * 0.30f, size.height * 0.13f),
-                size = androidx.compose.ui.geometry.Size(size.width * 0.46f, size.height * 0.72f),
-            )
-            val rippleColor = Color(0x669AA29B)
+            val pondLine = Color(0x7FA7B0A7)
+            val idleCenter = Offset(size.width * 0.22f, size.height * 0.54f)
             repeat(3) { index ->
-                val radius = size.minDimension * (0.15f + index * 0.11f)
                 drawCircle(
-                    color = rippleColor.copy(alpha = 0.34f - index * 0.07f),
-                    radius = radius,
-                    center = center,
-                    style = Stroke(width = 1.4f),
+                    color = pondLine.copy(alpha = 0.40f - index * 0.09f),
+                    radius = size.minDimension * (0.10f + index * 0.09f),
+                    center = idleCenter,
+                    style = Stroke(width = 1.3f),
                 )
             }
-            val particleCount = 18
-            repeat(particleCount) { index ->
-                val x = ((index * 37) % 97) / 97f * size.width
-                val y = ((index * 61 + 17) % 101) / 101f * size.height
-                drawCircle(Color(0x77D4D1C4), 1.2f, Offset(x, y))
-            }
+            // Dark reflected bank / timber edge, matching the supplied pond references.
+            drawRect(
+                color = Color(0xAA20251F),
+                topLeft = Offset.Zero,
+                size = androidx.compose.ui.geometry.Size(size.width * 0.055f, size.height),
+            )
             drawLine(
-                color = Color(0x55E4E0CF),
-                start = Offset(size.width * 0.10f, size.height * 0.24f),
-                end = Offset(size.width * 0.76f, size.height * 0.20f),
+                color = Color(0x66E1E2D7),
+                start = Offset(size.width * 0.06f, size.height * 0.24f),
+                end = Offset(size.width * 0.46f, size.height * 0.20f),
                 strokeWidth = 3f,
             )
+
+            // Curator-facing diagram: animated pond at left, isolated reflection at right.
+            drawLine(
+                color = Color(0x99D8DED5),
+                start = Offset(size.width * 0.42f, size.height * 0.50f),
+                end = Offset(size.width * 0.54f, size.height * 0.50f),
+                strokeWidth = 1.5f,
+            )
+            val faceLeft = size.width * 0.61f
+            val faceTop = size.height * 0.12f
+            val faceWidth = size.width * 0.27f
+            val faceHeight = size.height * 0.76f
+            drawOval(
+                color = Color(0xB8A8A69D),
+                topLeft = Offset(faceLeft, faceTop),
+                size = androidx.compose.ui.geometry.Size(faceWidth, faceHeight),
+            )
+            drawOval(
+                color = Color(0xAA353832),
+                topLeft = Offset(faceLeft + faceWidth * 0.19f, faceTop + faceHeight * 0.34f),
+                size = androidx.compose.ui.geometry.Size(faceWidth * 0.19f, faceHeight * 0.08f),
+            )
+            drawOval(
+                color = Color(0xAA353832),
+                topLeft = Offset(faceLeft + faceWidth * 0.62f, faceTop + faceHeight * 0.34f),
+                size = androidx.compose.ui.geometry.Size(faceWidth * 0.19f, faceHeight * 0.08f),
+            )
+            drawLine(
+                color = Color(0x996B5553),
+                start = Offset(faceLeft + faceWidth * 0.37f, faceTop + faceHeight * 0.72f),
+                end = Offset(faceLeft + faceWidth * 0.64f, faceTop + faceHeight * 0.72f),
+                strokeWidth = 2f,
+            )
+            repeat(2) { index ->
+                drawCircle(
+                    color = pondLine.copy(alpha = 0.25f - index * 0.08f),
+                    radius = size.minDimension * (0.18f + index * 0.11f),
+                    center = Offset(faceLeft + faceWidth * 0.5f, faceTop + faceHeight * 0.52f),
+                    style = Stroke(width = 1f),
+                )
+            }
+            repeat(16) { index ->
+                val x = ((index * 37 + 11) % 97) / 97f * size.width
+                val y = ((index * 61 + 17) % 101) / 101f * size.height
+                drawCircle(Color(0x66D4D1C4), 1.1f, Offset(x, y))
+            }
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
