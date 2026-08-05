@@ -151,6 +151,11 @@ fun BeautyControls(
         lakeWaveDetail = settings.lakeWaveDetail,
         lakeSpecular = settings.lakeSpecular,
         lakeSkyBlue = settings.lakeSkyBlue,
+        lakeSunlight = settings.lakeSunlight,
+        lakeWaterWarmth = settings.lakeWaterWarmth,
+        lakeSaturation = settings.lakeSaturation,
+        lakeFoam = settings.lakeFoam,
+        lakeClouds = settings.lakeClouds,
         revealDurationSeconds = settings.revealDurationSeconds,
     )
 
@@ -442,7 +447,12 @@ fun BeautyControls(
                         SettingSlider(stringResource(R.string.lake_deformation), settings.lakeDeformation, "slider_lake_deformation") { onChange(settings.copy(lakeDeformation = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_swirl), settings.lakeSwirl, "slider_lake_swirl") { onChange(settings.copy(lakeSwirl = it).clamped()) }
                         Text(stringResource(R.string.lake_look_section), color = BmText, fontSize = 12.sp)
+                        SettingSlider(stringResource(R.string.lake_sunlight), settings.lakeSunlight, "slider_lake_sunlight") { onChange(settings.copy(lakeSunlight = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_sky_blue), settings.lakeSkyBlue, "slider_lake_sky_blue") { onChange(settings.copy(lakeSkyBlue = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_water_warmth), settings.lakeWaterWarmth, "slider_lake_water_warmth") { onChange(settings.copy(lakeWaterWarmth = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_saturation), settings.lakeSaturation, "slider_lake_saturation") { onChange(settings.copy(lakeSaturation = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_clouds), settings.lakeClouds, "slider_lake_clouds") { onChange(settings.copy(lakeClouds = it).clamped()) }
+                        SettingSlider(stringResource(R.string.lake_foam), settings.lakeFoam, "slider_lake_foam") { onChange(settings.copy(lakeFoam = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_intensity), settings.lakeIntensity, "slider_lake_intensity") { onChange(settings.copy(lakeIntensity = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_specular), settings.lakeSpecular, "slider_lake_specular") { onChange(settings.copy(lakeSpecular = it).clamped()) }
                         SettingSlider(stringResource(R.string.lake_darkness), settings.lakeDarkness, "slider_lake_darkness") { onChange(settings.copy(lakeDarkness = it).clamped()) }

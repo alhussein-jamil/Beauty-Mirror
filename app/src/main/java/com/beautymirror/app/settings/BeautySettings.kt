@@ -66,6 +66,16 @@ data class BeautySettings(
     val lakeSpecular: Float = 0.50f,
     /** Lift toward light sky-blue (vs deeper teal). */
     val lakeSkyBlue: Float = 0.78f,
+    /** How much sunlight hits the pond surface. */
+    val lakeSunlight: Float = 0.70f,
+    /** Cool cyan (0) → warm amber (1) water tint. */
+    val lakeWaterWarmth: Float = 0.22f,
+    /** Color saturation of sky and water. */
+    val lakeSaturation: Float = 0.78f,
+    /** Crest / foam brightness on wave peaks. */
+    val lakeFoam: Float = 0.55f,
+    /** Soft cloud amount in the reflected sky. */
+    val lakeClouds: Float = 0.55f,
     val revealDurationSeconds: Float = 10f,
 
     val qualityLevel: QualityLevel = QualityLevel.MEDIUM,
@@ -153,6 +163,11 @@ data class BeautySettings(
         lakeWaveDetail = MathUtils.clamp(lakeWaveDetail, 0f, 1f),
         lakeSpecular = MathUtils.clamp(lakeSpecular, 0f, 1f),
         lakeSkyBlue = MathUtils.clamp(lakeSkyBlue, 0f, 1f),
+        lakeSunlight = MathUtils.clamp(lakeSunlight, 0f, 1f),
+        lakeWaterWarmth = MathUtils.clamp(lakeWaterWarmth, 0f, 1f),
+        lakeSaturation = MathUtils.clamp(lakeSaturation, 0f, 1f),
+        lakeFoam = MathUtils.clamp(lakeFoam, 0f, 1f),
+        lakeClouds = MathUtils.clamp(lakeClouds, 0f, 1f),
         revealDurationSeconds = MathUtils.clamp(
             revealDurationSeconds,
             VisitorRevealController.MIN_DURATION_SECONDS,
@@ -375,6 +390,11 @@ data class BeautySettings(
                 lakeWaveDetail = current.lakeWaveDetail,
                 lakeSpecular = current.lakeSpecular,
                 lakeSkyBlue = current.lakeSkyBlue,
+                lakeSunlight = current.lakeSunlight,
+                lakeWaterWarmth = current.lakeWaterWarmth,
+                lakeSaturation = current.lakeSaturation,
+                lakeFoam = current.lakeFoam,
+                lakeClouds = current.lakeClouds,
                 revealDurationSeconds = current.revealDurationSeconds,
             )
         }

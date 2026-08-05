@@ -33,6 +33,11 @@ class SettingsRepositoryTest {
         assertThat(loaded.lakeWaveDetail).isWithin(1e-3f).of(0.55f)
         assertThat(loaded.lakeSpecular).isWithin(1e-3f).of(0.50f)
         assertThat(loaded.lakeSkyBlue).isWithin(1e-3f).of(0.78f)
+        assertThat(loaded.lakeSunlight).isWithin(1e-3f).of(0.70f)
+        assertThat(loaded.lakeWaterWarmth).isWithin(1e-3f).of(0.22f)
+        assertThat(loaded.lakeSaturation).isWithin(1e-3f).of(0.78f)
+        assertThat(loaded.lakeFoam).isWithin(1e-3f).of(0.55f)
+        assertThat(loaded.lakeClouds).isWithin(1e-3f).of(0.55f)
         assertThat(loaded.revealDurationSeconds).isWithin(1e-3f).of(10f)
     }
 
@@ -67,6 +72,11 @@ class SettingsRepositoryTest {
             lakeCameraBlend = 0.74f,
             lakeDeformation = 0.36f,
             lakeSwirl = 0.91f,
+            lakeSunlight = 0.81f,
+            lakeWaterWarmth = 0.33f,
+            lakeSaturation = 0.66f,
+            lakeFoam = 0.44f,
+            lakeClouds = 0.39f,
             revealDurationSeconds = 14f,
         ).clamped()
         repo.save(custom)
@@ -93,6 +103,11 @@ class SettingsRepositoryTest {
         assertThat(loaded.lakeCameraBlend).isWithin(1e-3f).of(0.74f)
         assertThat(loaded.lakeDeformation).isWithin(1e-3f).of(0.36f)
         assertThat(loaded.lakeSwirl).isWithin(1e-3f).of(0.91f)
+        assertThat(loaded.lakeSunlight).isWithin(1e-3f).of(0.81f)
+        assertThat(loaded.lakeWaterWarmth).isWithin(1e-3f).of(0.33f)
+        assertThat(loaded.lakeSaturation).isWithin(1e-3f).of(0.66f)
+        assertThat(loaded.lakeFoam).isWithin(1e-3f).of(0.44f)
+        assertThat(loaded.lakeClouds).isWithin(1e-3f).of(0.39f)
         assertThat(loaded.revealDurationSeconds).isWithin(1e-3f).of(14f)
     }
 }

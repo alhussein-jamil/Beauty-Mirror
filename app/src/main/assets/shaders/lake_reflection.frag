@@ -22,6 +22,11 @@ uniform float uRippleSpeed;
 uniform float uWaveDetail;
 uniform float uSpecular;
 uniform float uSkyBlue;
+uniform float uSunlight;
+uniform float uWaterWarmth;
+uniform float uSaturation;
+uniform float uFoam;
+uniform float uClouds;
 uniform float uQuality;
 uniform float uEnabled;
 out vec4 fragColor;
@@ -143,21 +148,24 @@ vec3 waterField(
     return field;
 }
 
-vec3 skyColor(vec2 reflectedUv, float time, float skyBlue) {
+vec3 skyColor(vec2 reflectedUv, float time, float skyBlue, float cloudsAmt, float sunlight) {
     float h = clamp(reflectedUv.y, 0.0, 1.0);
     float lift = clamp(skyBlue, 0.0, 1.0);
+    float sun = clamp(sunlight, 0.0, 1.0);
     // True sky-blue range — light cyan-blue, not deep navy.
     vec3 zenith = mix(vec3(0.28, 0.58, 0.92), vec3(0.45, 0.74, 0.98), lift);
     vec3 mid = mix(vec3(0.52, 0.78, 0.96), vec3(0.68, 0.88, 1.0), lift);
     vec3 haze = mix(vec3(0.78, 0.90, 0.98), vec3(0.88, 0.95, 1.0), lift);
     vec3 sky = mix(haze, mid, smoothstep(0.0, 0.45, h));
     sky = mix(sky, zenith, smoothstep(0.45, 1.0, h));
+    // Dim / brighten overall sky with sunlight (no sun disk).
+    sky *= mix(0.55, 1.12, sun);
 
     float cloudA = sin((reflectedUv.x * 2.4 + reflectedUv.y * 0.5) * PI + time * 0.04);
     float cloudB = sin((reflectedUv.x * -1.5 + reflectedUv.y * 1.8) * PI - time * 0.028);
     float cloud = smoothstep(0.28, 1.05, cloudA * 0.50 + cloudB * 0.38 + 0.48);
-    sky = mix(sky, vec3(0.95, 0.98, 1.0), cloud * (0.10 + lift * 0.10) * smoothstep(0.15, 0.9, h));
-    // No sun disk / shaft — only soft sky + clouds.
+    float cloudMix = cloud * clamp(cloudsAmt, 0.0, 1.0) * (0.12 + lift * 0.14) * smoothstep(0.15, 0.9, h);
+    sky = mix(sky, vec3(0.95, 0.98, 1.0), cloudMix);
     return sky;
 }
 
@@ -185,6 +193,11 @@ void main() {
     float settledCamera = clamp(uSettledCamera, 0.0, 1.0);
     float specularAmt = clamp(uSpecular, 0.0, 1.0);
     float skyBlue = clamp(uSkyBlue, 0.0, 1.0);
+    float sunlight = clamp(uSunlight, 0.0, 1.0);
+    float waterWarmth = clamp(uWaterWarmth, 0.0, 1.0);
+    float saturation = clamp(uSaturation, 0.0, 1.0);
+    float foamAmt = clamp(uFoam, 0.0, 1.0);
+    float cloudsAmt = clamp(uClouds, 0.0, 1.0);
 
     vec3 field = waterField(
         p, time, motion, quality,
@@ -196,41 +209,49 @@ void main() {
 
     vec3 lightDir = normalize(vec3(0.20, 0.55, 0.75));
     vec3 fillDir = normalize(vec3(-0.50, 0.25, 0.72));
-    float sunSpec = pow(max(dot(normal, lightDir), 0.0), mix(20.0, 58.0, quality)) * specularAmt;
-    float fillSpec = pow(max(dot(normal, fillDir), 0.0), mix(12.0, 26.0, quality)) * specularAmt * 0.65;
+    float sunSpec = pow(max(dot(normal, lightDir), 0.0), mix(20.0, 58.0, quality)) *
+        specularAmt * (0.25 + sunlight * 1.15);
+    float fillSpec = pow(max(dot(normal, fillDir), 0.0), mix(12.0, 26.0, quality)) *
+        specularAmt * mix(0.35, 0.75, sunlight);
     float fresnel = pow(1.0 - clamp(normal.z, 0.0, 1.0), 2.2);
 
     vec2 reflectOffset = vec2(normal.x, -normal.y) * (0.10 + motion * 0.06);
     reflectOffset.x /= max(aspect, 0.001);
     vec2 skyUv = clamp(uv + reflectOffset, vec2(0.0), vec2(1.0));
     skyUv.y = clamp(skyUv.y * 0.75 + 0.25, 0.0, 1.0);
-    vec3 sky = skyColor(skyUv, time, skyBlue);
+    vec3 sky = skyColor(skyUv, time, skyBlue, cloudsAmt, sunlight);
 
-    vec3 deepWater = mix(vec3(0.10, 0.38, 0.62), vec3(0.22, 0.58, 0.82), skyBlue);
-    vec3 midWater = mix(vec3(0.28, 0.62, 0.86), vec3(0.48, 0.78, 0.96), skyBlue);
+    vec3 deepCool = mix(vec3(0.10, 0.38, 0.62), vec3(0.22, 0.58, 0.82), skyBlue);
+    vec3 midCool = mix(vec3(0.28, 0.62, 0.86), vec3(0.48, 0.78, 0.96), skyBlue);
+    vec3 deepWarm = mix(vec3(0.22, 0.36, 0.42), vec3(0.42, 0.52, 0.48), skyBlue);
+    vec3 midWarm = mix(vec3(0.48, 0.58, 0.52), vec3(0.72, 0.74, 0.58), skyBlue);
+    vec3 deepWater = mix(deepCool, deepWarm, waterWarmth);
+    vec3 midWater = mix(midCool, midWarm, waterWarmth);
     vec3 water = mix(deepWater, midWater, 0.40 + fresnel * 0.28 - depth * 0.20);
     water = mix(water, sky, 0.55 + skyBlue * 0.18 + fresnel * 0.16 - depth * 0.15);
+    water *= mix(0.62, 1.08, sunlight);
 
     float crest = smoothstep(0.004, 0.028, abs(field.x));
     float crestLine = smoothstep(0.018, 0.004, abs(field.x));
-    water += vec3(0.78, 0.92, 1.0) * crest * (0.045 + motion * 0.055);
-    water += vec3(0.95, 0.98, 1.0) * crestLine * (0.05 + motion * 0.04) * specularAmt;
+    water += vec3(0.78, 0.92, 1.0) * crest * (0.045 + motion * 0.055) * foamAmt;
+    water += vec3(0.95, 0.98, 1.0) * crestLine * (0.05 + motion * 0.04) * specularAmt * foamAmt;
     water += vec3(0.95, 0.97, 1.0) * sunSpec * (0.35 + intensity * 0.30 + motion * 0.08);
     water += vec3(0.82, 0.93, 1.0) * fillSpec * (0.08 + intensity * 0.05);
 
     float glitterSeed = hash12(floor(uv * vec2(55.0, 80.0) + field.yz * 22.0 + time * 0.45));
-    float glitter = step(0.984 - motion * 0.008, glitterSeed) * smoothstep(0.20, 0.80, sunSpec);
-    water += vec3(1.0, 0.99, 0.96) * glitter * (0.22 + specularAmt * 0.20);
+    float glitter = step(0.984 - motion * 0.008 - sunlight * 0.006, glitterSeed) *
+        smoothstep(0.20, 0.80, sunSpec);
+    water += vec3(1.0, 0.99, 0.96) * glitter * (0.22 + specularAmt * 0.20) * sunlight;
 
     if (quality > 0.20 && motion > 0.05) {
         float caustic = sin((p.x * 10.0 + field.y * 16.0) + time * 0.55) *
             sin((p.y * 8.0 - field.z * 14.0) - time * 0.42);
         caustic = pow(smoothstep(0.45, 0.95, caustic * 0.5 + 0.5), 1.35);
-        water += vec3(0.75, 0.90, 1.0) * caustic * (0.035 + motion * 0.035) * specularAmt;
+        water += vec3(0.75, 0.90, 1.0) * caustic * (0.035 + motion * 0.035) * specularAmt * sunlight;
     }
 
     vec3 surfaceAccent = vec3(0.95, 0.97, 1.0) * sunSpec * (0.22 + motion * 0.10);
-    surfaceAccent += vec3(0.78, 0.92, 1.0) * crest * (0.05 + motion * 0.05);
+    surfaceAccent += vec3(0.78, 0.92, 1.0) * crest * (0.05 + motion * 0.05) * foamAmt;
     surfaceAccent += vec3(1.0, 0.99, 0.96) * glitter * 0.22;
 
     vec3 finalColor = water + surfaceAccent * 0.30;
@@ -314,7 +335,9 @@ void main() {
     float vignette = smoothstep(0.28, 0.95, dot(p, p) * 1.15);
     finalColor *= 1.0 - vignette * (0.025 + depth * 0.035);
     finalColor = mix(finalColor, finalColor * vec3(0.94, 0.98, 1.04), depth * 0.10);
-    finalColor = mix(vec3(dot(finalColor, LUMA)), finalColor, 0.90 + intensity * 0.10);
+    // Curator saturation over intensity-tinted chroma.
+    float chroma = mix(0.35, 1.20, saturation) * (0.90 + intensity * 0.10);
+    finalColor = mix(vec3(dot(finalColor, LUMA)), finalColor, chroma);
 
     fragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
 }

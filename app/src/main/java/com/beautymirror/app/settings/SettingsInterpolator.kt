@@ -133,6 +133,11 @@ class SettingsInterpolator(
                 abs(a.lakeWaveDetail - b.lakeWaveDetail) > 0.001f ||
                 abs(a.lakeSpecular - b.lakeSpecular) > 0.001f ||
                 abs(a.lakeSkyBlue - b.lakeSkyBlue) > 0.001f ||
+                abs(a.lakeSunlight - b.lakeSunlight) > 0.001f ||
+                abs(a.lakeWaterWarmth - b.lakeWaterWarmth) > 0.001f ||
+                abs(a.lakeSaturation - b.lakeSaturation) > 0.001f ||
+                abs(a.lakeFoam - b.lakeFoam) > 0.001f ||
+                abs(a.lakeClouds - b.lakeClouds) > 0.001f ||
                 a.reflectionScene != b.reflectionScene ||
                 a.preset != b.preset ||
                 a.effectsEnabled != b.effectsEnabled
@@ -203,6 +208,11 @@ class SettingsInterpolator(
                 lakeWaveDetail = L(from.lakeWaveDetail, to.lakeWaveDetail),
                 lakeSpecular = L(from.lakeSpecular, to.lakeSpecular),
                 lakeSkyBlue = L(from.lakeSkyBlue, to.lakeSkyBlue),
+                lakeSunlight = L(from.lakeSunlight, to.lakeSunlight),
+                lakeWaterWarmth = L(from.lakeWaterWarmth, to.lakeWaterWarmth),
+                lakeSaturation = L(from.lakeSaturation, to.lakeSaturation),
+                lakeFoam = L(from.lakeFoam, to.lakeFoam),
+                lakeClouds = L(from.lakeClouds, to.lakeClouds),
             )
         }
     }

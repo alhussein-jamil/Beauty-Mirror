@@ -156,7 +156,6 @@ fun BeautyMirrorApp(
         // Runtime quality may drop under load; settings.qualityLevel stays the user ceiling.
         var runtimeQuality by remember { mutableStateOf(settings.qualityLevel) }
         var performanceState by remember { mutableStateOf(AdaptivePerformanceState.FULL) }
-        var revealProgress by remember { mutableStateOf(0f) }
 
         // Apply restored settings immediately after renderer startup, not only after the first
         // user interaction. This also makes mirror mode deterministic on every launch.
@@ -241,7 +240,6 @@ fun BeautyMirrorApp(
                 delay(250)
                 val snap = renderer.timingSnapshot()
                 timing = snap
-                revealProgress = renderer.visitorRevealProgress()
                 if (snap != null) {
                     val next = adaptive.evaluate(SystemClock.elapsedRealtime(), snap)
                     performanceState = adaptive.performanceState()
@@ -278,7 +276,6 @@ fun BeautyMirrorApp(
             timing = timing,
             runtimeQuality = runtimeQuality,
             performanceState = performanceState,
-            revealProgress = revealProgress,
             pipelineReady = pipelineReady,
             statusMessage = landmarkerError,
             startWithChromeHidden = launchExhibitionMode,

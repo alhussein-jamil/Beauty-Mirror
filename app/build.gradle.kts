@@ -12,8 +12,8 @@ android {
         applicationId = "com.beautymirror.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 31
-        versionName = "6.1.0"
+        versionCode = 32
+        versionName = "6.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
         buildConfigField("boolean", "OTA_ENABLED", "true")
