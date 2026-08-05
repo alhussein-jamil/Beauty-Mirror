@@ -126,6 +126,13 @@ class SettingsInterpolator(
                 abs(a.lakeCameraBlend - b.lakeCameraBlend) > 0.001f ||
                 abs(a.lakeDeformation - b.lakeDeformation) > 0.001f ||
                 abs(a.lakeSwirl - b.lakeSwirl) > 0.001f ||
+                abs(a.lakeSettledWater - b.lakeSettledWater) > 0.001f ||
+                abs(a.lakeSettledCamera - b.lakeSettledCamera) > 0.001f ||
+                abs(a.lakeRippleRegions - b.lakeRippleRegions) > 0.001f ||
+                abs(a.lakeRippleSpeed - b.lakeRippleSpeed) > 0.001f ||
+                abs(a.lakeWaveDetail - b.lakeWaveDetail) > 0.001f ||
+                abs(a.lakeSpecular - b.lakeSpecular) > 0.001f ||
+                abs(a.lakeSkyBlue - b.lakeSkyBlue) > 0.001f ||
                 a.reflectionScene != b.reflectionScene ||
                 a.preset != b.preset ||
                 a.effectsEnabled != b.effectsEnabled
@@ -189,6 +196,13 @@ class SettingsInterpolator(
                 lakeCameraBlend = L(from.lakeCameraBlend, to.lakeCameraBlend),
                 lakeDeformation = L(from.lakeDeformation, to.lakeDeformation),
                 lakeSwirl = L(from.lakeSwirl, to.lakeSwirl),
+                lakeSettledWater = L(from.lakeSettledWater, to.lakeSettledWater),
+                lakeSettledCamera = L(from.lakeSettledCamera, to.lakeSettledCamera),
+                lakeRippleRegions = L(from.lakeRippleRegions, to.lakeRippleRegions),
+                lakeRippleSpeed = L(from.lakeRippleSpeed, to.lakeRippleSpeed),
+                lakeWaveDetail = L(from.lakeWaveDetail, to.lakeWaveDetail),
+                lakeSpecular = L(from.lakeSpecular, to.lakeSpecular),
+                lakeSkyBlue = L(from.lakeSkyBlue, to.lakeSkyBlue),
             )
         }
     }

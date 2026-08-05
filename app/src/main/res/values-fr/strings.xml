@@ -88,7 +88,24 @@
     <string name="scene_mood_fluid_sub">Mouvement, déformation et vortex renforcés</string>
     <string name="scene_mood_gallery">Galerie</string>
     <string name="scene_mood_gallery_sub">Fusion caméra lisible avec vortex d’arrivée poli</string>
-    <string name="lake_scene_hint">Sans visiteur, l’écran devient un étang bleu ciel vivant. Lorsqu’un visage apparaît, l’image complète de la caméra fusionne avec l’eau ; le visage ne sert qu’à guider la clarté, jamais comme découpe.</string>
+    <string name="lake_scene_hint">Sans visiteur, l’écran est un étang bleu ciel vivant. Quand un visage apparaît, la caméra fusionne avec l’eau. Utilisez Eau finale / Caméra finale pour le mélange après la révélation ; Régions d’ondulation règle le nombre de centres d’ondulation.</string>
+    <string name="lake_settle_section">Mélange final</string>
+    <string name="lake_motion_section">Mouvement</string>
+    <string name="lake_look_section">Apparence</string>
+    <string name="lake_intensity">Présence de l’eau</string>
+    <string name="lake_motion">Force des ondulations</string>
+    <string name="lake_darkness">Profondeur optique</string>
+    <string name="lake_face_clarity">Clarté du visage</string>
+    <string name="lake_camera_blend">Mélange caméra à l’arrivée</string>
+    <string name="lake_deformation">Déformation de l’image</string>
+    <string name="lake_swirl">Vortex d’arrivée</string>
+    <string name="lake_settled_water">Eau finale</string>
+    <string name="lake_settled_camera">Caméra finale</string>
+    <string name="lake_ripple_regions">Régions d’ondulation</string>
+    <string name="lake_ripple_speed">Vitesse des ondulations</string>
+    <string name="lake_wave_detail">Détail des vagues</string>
+    <string name="lake_specular">Brillance spéculaire</string>
+    <string name="lake_sky_blue">Bleu ciel</string>
 
     <string name="skin_smoothing">Lissage de la peau</string>
     <string name="smoothing_radius">Rayon de lissage</string>
@@ -141,10 +158,6 @@
     <string name="toggle_lake">Ouvrir les réglages du reflet dans l’étang</string>
     <string name="mirror_scene">Miroir</string>
     <string name="dark_lake">Reflet fluide dans l’étang</string>
-    <string name="lake_intensity">Présence de l’eau</string>
-    <string name="lake_motion">Mouvement des ondulations</string>
-    <string name="lake_darkness">Profondeur optique</string>
-    <string name="lake_face_clarity">Clarté du visage</string>
     <string name="performance_interpolation">Pression de traitement adaptatif : %1$d%%</string>
 
     <string name="transformation_duration">Durée de transformation</string>
@@ -160,7 +173,4 @@
     <string name="pond_waiting_title">L’eau attend</string>
     <string name="pond_waiting_subtitle">Approchez-vous : la surface s’ouvrira autour de votre reflet.</string>
 
-    <string name="lake_camera_blend">Reflet caméra</string>
-    <string name="lake_deformation">Déformation de l’image</string>
-    <string name="lake_swirl">Vortex d’arrivée</string>
 </resources>

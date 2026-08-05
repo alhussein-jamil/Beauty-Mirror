@@ -48,12 +48,24 @@ data class BeautySettings(
     // Exhibition scene. The water pass runs after beautification so corrections remain visible.
     val reflectionScene: ReflectionScene = ReflectionScene.DARK_LAKE,
     val lakeIntensity: Float = 0.92f,
-    val lakeMotion: Float = 0.64f,
-    val lakeDarkness: Float = 0.14f,
+    val lakeMotion: Float = 0.55f,
+    val lakeDarkness: Float = 0.08f,
     val lakeFaceClarity: Float = 0.90f,
     val lakeCameraBlend: Float = 0.58f,
     val lakeDeformation: Float = 0.40f,
-    val lakeSwirl: Float = 0.82f,
+    val lakeSwirl: Float = 0.70f,
+    /** Water amount after reveal settles (0 = none, 1 = strong water veil). */
+    val lakeSettledWater: Float = 0.42f,
+    /** Camera amount after reveal settles (0 = none, 1 = strong camera). */
+    val lakeSettledCamera: Float = 0.72f,
+    /** How many independent ripple regions (0 = none, 1 = six). */
+    val lakeRippleRegions: Float = 0.40f,
+    val lakeRippleSpeed: Float = 0.55f,
+    /** Directional wave / chop complexity. */
+    val lakeWaveDetail: Float = 0.55f,
+    val lakeSpecular: Float = 0.50f,
+    /** Lift toward light sky-blue (vs deeper teal). */
+    val lakeSkyBlue: Float = 0.78f,
     val revealDurationSeconds: Float = 10f,
 
     val qualityLevel: QualityLevel = QualityLevel.MEDIUM,
@@ -134,6 +146,13 @@ data class BeautySettings(
         lakeCameraBlend = MathUtils.clamp(lakeCameraBlend, 0f, 1f),
         lakeDeformation = MathUtils.clamp(lakeDeformation, 0f, 1f),
         lakeSwirl = MathUtils.clamp(lakeSwirl, 0f, 1f),
+        lakeSettledWater = MathUtils.clamp(lakeSettledWater, 0f, 1f),
+        lakeSettledCamera = MathUtils.clamp(lakeSettledCamera, 0f, 1f),
+        lakeRippleRegions = MathUtils.clamp(lakeRippleRegions, 0f, 1f),
+        lakeRippleSpeed = MathUtils.clamp(lakeRippleSpeed, 0f, 1f),
+        lakeWaveDetail = MathUtils.clamp(lakeWaveDetail, 0f, 1f),
+        lakeSpecular = MathUtils.clamp(lakeSpecular, 0f, 1f),
+        lakeSkyBlue = MathUtils.clamp(lakeSkyBlue, 0f, 1f),
         revealDurationSeconds = MathUtils.clamp(
             revealDurationSeconds,
             VisitorRevealController.MIN_DURATION_SECONDS,
@@ -349,6 +368,13 @@ data class BeautySettings(
                 lakeCameraBlend = current.lakeCameraBlend,
                 lakeDeformation = current.lakeDeformation,
                 lakeSwirl = current.lakeSwirl,
+                lakeSettledWater = current.lakeSettledWater,
+                lakeSettledCamera = current.lakeSettledCamera,
+                lakeRippleRegions = current.lakeRippleRegions,
+                lakeRippleSpeed = current.lakeRippleSpeed,
+                lakeWaveDetail = current.lakeWaveDetail,
+                lakeSpecular = current.lakeSpecular,
+                lakeSkyBlue = current.lakeSkyBlue,
                 revealDurationSeconds = current.revealDurationSeconds,
             )
         }

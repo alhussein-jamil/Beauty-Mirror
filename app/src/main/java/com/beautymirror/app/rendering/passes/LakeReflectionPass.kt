@@ -10,10 +10,8 @@ import com.beautymirror.app.rendering.RenderPass
 /**
  * Procedural sky-pond installation pass.
  *
- * The idle state is a fully animated blue pond independent from the camera feed. When a visitor
- * appears, the complete beautified camera image is optically merged with the water rather than
- * clipped to a face silhouette. A broad analytic face ellipse only guides local clarity. A short
- * vortex centered on the newly detected face introduces the reflection as one continuous fluid event.
+ * Idle is an animated sky-blue pond. With a visitor, the camera merges into the water; settled
+ * water/camera amounts, ripple region count and wave detail are curator-controlled.
  */
 class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     override val name: String = "lake_reflection"
@@ -34,6 +32,13 @@ class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     private val uCameraBlend = program.uniformLocation("uCameraBlend")
     private val uDeformation = program.uniformLocation("uDeformation")
     private val uSwirl = program.uniformLocation("uSwirl")
+    private val uSettledWater = program.uniformLocation("uSettledWater")
+    private val uSettledCamera = program.uniformLocation("uSettledCamera")
+    private val uRippleRegions = program.uniformLocation("uRippleRegions")
+    private val uRippleSpeed = program.uniformLocation("uRippleSpeed")
+    private val uWaveDetail = program.uniformLocation("uWaveDetail")
+    private val uSpecular = program.uniformLocation("uSpecular")
+    private val uSkyBlue = program.uniformLocation("uSkyBlue")
     private val uQuality = program.uniformLocation("uQuality")
     private val uEnabled = program.uniformLocation("uEnabled")
 
@@ -48,12 +53,19 @@ class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
     var facePresence: Float = 0f
     var visitorReveal: Float = 0f
     var intensity: Float = 0.92f
-    var motion: Float = 0.64f
-    var darkness: Float = 0.14f
+    var motion: Float = 0.55f
+    var darkness: Float = 0.08f
     var faceClarity: Float = 0.90f
     var cameraBlend: Float = 0.58f
     var deformation: Float = 0.40f
-    var swirl: Float = 0.82f
+    var swirl: Float = 0.70f
+    var settledWater: Float = 0.42f
+    var settledCamera: Float = 0.72f
+    var rippleRegions: Float = 0.40f
+    var rippleSpeed: Float = 0.55f
+    var waveDetail: Float = 0.55f
+    var specular: Float = 0.50f
+    var skyBlue: Float = 0.78f
     var quality: Float = 1f
 
     override fun resize(width: Int, height: Int) {
@@ -79,6 +91,13 @@ class LakeReflectionPass(vertexSrc: String, fragmentSrc: String) : RenderPass {
         GLES30.glUniform1f(uCameraBlend, cameraBlend.coerceIn(0f, 1f))
         GLES30.glUniform1f(uDeformation, deformation.coerceIn(0f, 1f))
         GLES30.glUniform1f(uSwirl, swirl.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uSettledWater, settledWater.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uSettledCamera, settledCamera.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uRippleRegions, rippleRegions.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uRippleSpeed, rippleSpeed.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uWaveDetail, waveDetail.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uSpecular, specular.coerceIn(0f, 1f))
+        GLES30.glUniform1f(uSkyBlue, skyBlue.coerceIn(0f, 1f))
         GLES30.glUniform1f(uQuality, quality.coerceIn(0f, 1f))
         GLES30.glUniform1f(uEnabled, if (enabled && intensity > 0.001f) 1f else 0f)
         mesh.draw()
