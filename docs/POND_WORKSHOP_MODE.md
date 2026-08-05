@@ -1,11 +1,30 @@
 # Pond workshop mode
 
+## Installation behavior
+
+1. **Idle screensaver** — the shader renders a living grey-green pond with slow murk drift,
+   reflected light, sparse sediment and independent expanding rings. The camera image is not shown.
+2. **Face acquisition** — tracking creates a blurred landmark face mask. Only that masked face is
+   composited over the pond; the surrounding room remains water.
+3. **Timed reveal** — the face is visible immediately as a mirror, while water veil, color return
+   and the real beauty graph settle over `revealDurationSeconds` (10 seconds by default).
+4. **New visitor** — a real departure or direct tracker hand-off restarts progress without storing
+   or recognizing biometric identity.
+5. **Editor dismissal** — tapping outside or returning to the pond starts the transformation again.
+
+## Art direction
+
+The target is a murky pond / marsh / well rather than a pool: low saturation, peat shadows,
+soft workshop or sky reflections, restrained rings, no cyan caustic net, and no opaque water layer
+covering the visitor's face.
+
 ## Intended experience
 
 The phone behaves as a reflective pond rather than a camera-filter editor. After configuration is
-closed, the interface disappears and the camera image is rendered through a muted, irregular water
-surface. The visitor initially sees a murky reflection. Over the configured duration, the pond
-settles around the tracked face and the selected beauty corrections progressively accumulate.
+closed, the interface disappears. With no visitor, the display is entirely procedural water. Once
+a face is tracked, only the softly feathered face oval is composited over the pond; the room and
+camera background remain hidden. Over the configured duration, the face corrections progressively
+accumulate while the water veil becomes almost imperceptible.
 
 Default duration: **10 seconds**. Supported range: **3–30 seconds**.
 
@@ -23,7 +42,7 @@ The reveal is restarted by:
 - a new face appearing after a sustained absence;
 - a direct one-face tracker hand-off with a sustained implausible position/scale discontinuity.
 
-No face embedding, photograph, biometric identifier or identity history is created.
+No photograph, face crop, biometric identifier or identity history is stored or transmitted.
 
 ## Rendering order
 
@@ -34,8 +53,9 @@ No face embedding, photograph, biometric identifier or identity history is creat
 5. Face lighting and shine control
 6. Eye, brow, lip, teeth, blush and contour enhancement
 7. Optional restrained face geometry
-8. Pond reflection and refraction
-9. Final display/capture composite
+8. Procedural pond screensaver/background
+9. Landmark-mask face insertion with restrained refraction
+10. Final display/capture composite
 
 The reveal value scales the actual beauty graph, not merely pond clarity. Therefore the face visibly
 changes the longer the visitor looks.

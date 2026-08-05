@@ -80,15 +80,15 @@
     <string name="action_stage_ready">Prêt pour la scène</string>
     <string name="action_reflection_plus">Reflet++</string>
     <string name="scene_moods">Ambiances</string>
-    <string name="scene_mood_still_well">Puits calme</string>
-    <string name="scene_mood_still_well_sub">Étang sombre, murmure doux, visage miroir</string>
+    <string name="scene_mood_still_well">Étang atelier</string>
+    <string name="scene_mood_still_well_sub">Eau gris-vert, surface vivante et calme</string>
     <string name="scene_mood_marsh">Marais</string>
-    <string name="scene_mood_marsh_sub">Tourbe plus profonde, souffle plus fort</string>
-    <string name="scene_mood_ripple">Onde douce</string>
-    <string name="scene_mood_ripple_sub">Anneaux de surface plus vivants</string>
-    <string name="scene_mood_reveal">Révélation++</string>
-    <string name="scene_mood_reveal_sub">Crête d’arrivée, puis reflet clair</string>
-    <string name="lake_scene_hint">L’étang reste visible en permanence. Fermer l’éditeur lance une nouvelle transformation progressive du visage ; la séquence redémarre avec chaque visiteur.</string>
+    <string name="scene_mood_marsh_sub">Tourbe sombre et reflets plus lents</string>
+    <string name="scene_mood_ripple">Reflet clair</string>
+    <string name="scene_mood_ripple_sub">Visage miroir, voile d’eau très léger</string>
+    <string name="scene_mood_reveal">Exposition</string>
+    <string name="scene_mood_reveal_sub">Équilibre prévu pour les visiteurs</string>
+    <string name="lake_scene_hint">Sans visage, l’étang devient un écran de veille animé. À l’arrivée d’un visiteur, seul le visage est incrusté dans l’eau et la transformation redémarre automatiquement.</string>
 
     <string name="skin_smoothing">Lissage de la peau</string>
     <string name="smoothing_radius">Rayon de lissage</string>
@@ -149,14 +149,14 @@
 
     <string name="transformation_duration">Durée de transformation</string>
     <string name="seconds_value">%1$.0f s</string>
-    <string name="pond_keep_looking">Restez face à votre reflet</string>
-    <string name="pond_reveal_remaining">Le visage se révèle dans %1$.1f secondes</string>
+    <string name="pond_keep_looking">Votre reflet se stabilise</string>
+    <string name="pond_reveal_remaining">Continuez à regarder · %1$.1f s</string>
     <string name="pond_reflection_title">Reflet vivant dans l’étang</string>
-    <string name="pond_reflection_subtitle">Eau gris-ardoise trouble, ondes retenues et visage qui se révèle progressivement.</string>
+    <string name="pond_reflection_subtitle">Étang animé au repos ; visage isolé et lisible dès qu’un visiteur approche.</string>
     <string name="pond_duration_summary">Transformation · %1$.0f s</string>
     <string name="pond_new_face_restart">Redémarre pour chaque visiteur</string>
 
     <string name="return_to_pond">Retour à l’étang</string>
-    <string name="pond_waiting_title">L’eau vous attend</string>
-    <string name="pond_waiting_subtitle">Approchez-vous et rencontrez votre reflet.</string>
+    <string name="pond_waiting_title">L’étang est vivant</string>
+    <string name="pond_waiting_subtitle">Approchez-vous de l’eau pour révéler votre reflet.</string>
 </resources>

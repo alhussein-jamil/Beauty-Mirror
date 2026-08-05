@@ -68,15 +68,16 @@ class SettingsRepository(private val context: Context) {
             ReflectionScene.valueOf(prefs[reflectionSceneKey] ?: ReflectionScene.DARK_LAKE.name)
         }.getOrDefault(ReflectionScene.DARK_LAKE)
         val effectsSchema = prefs[effectsSchemaKey] ?: 1
-        // Schema 11 replaces the synthetic puddle treatment with a restrained pond. Rebase old
-        // water parameters once so an upgrade immediately receives the new art-direction defaults.
-        val lakeIntensity = if (effectsSchema < 11) 0.82f else (prefs[lakeIntensityKey] ?: 0.82f)
-        val lakeMotion = if (effectsSchema < 11) 0.34f else (prefs[lakeMotionKey] ?: 0.34f)
-        val lakeDarkness = if (effectsSchema < 11) 0.62f else (prefs[lakeDarknessKey] ?: 0.62f)
-        val lakeFaceClarity = if (effectsSchema < 11) {
-            0.86f
+        // Schema 12 implements the workshop art direction: animated pond screensaver when idle,
+        // actual landmark-isolated face over the pond, and only a very light water veil on skin.
+        // Rebase previous lake values once so old "pool" settings cannot survive an upgrade.
+        val lakeIntensity = if (effectsSchema < 12) 0.90f else (prefs[lakeIntensityKey] ?: 0.90f)
+        val lakeMotion = if (effectsSchema < 12) 0.30f else (prefs[lakeMotionKey] ?: 0.30f)
+        val lakeDarkness = if (effectsSchema < 12) 0.50f else (prefs[lakeDarknessKey] ?: 0.50f)
+        val lakeFaceClarity = if (effectsSchema < 12) {
+            0.96f
         } else {
-            prefs[lakeFaceClarityKey] ?: 0.86f
+            prefs[lakeFaceClarityKey] ?: 0.96f
         }
         val revealDurationSeconds = if (effectsSchema < 10) {
             10f
@@ -216,6 +217,6 @@ class SettingsRepository(private val context: Context) {
     }
 
     companion object {
-        private const val CURRENT_EFFECTS_SCHEMA = 11
+        private const val CURRENT_EFFECTS_SCHEMA = 12
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -64,8 +65,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -488,30 +491,37 @@ fun MirrorScreen(
         }
 
         if (!chromeVisible) {
+            // In exhibition mode the artwork stays clean: a visitor tap cannot accidentally expose
+            // admin controls. Curators can long-press anywhere; normal app mode keeps the reveal icon.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures(onTap = { chromeVisible = true })
+                    .pointerInput(startWithChromeHidden) {
+                        detectTapGestures(
+                            onLongPress = { chromeVisible = true },
+                            onTap = { if (!startWithChromeHidden) chromeVisible = true },
+                        )
                     },
             )
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .padding(12.dp),
-                shape = CircleShape,
-                color = BmSurface,
-            ) {
-                IconButton(
-                    onClick = { chromeVisible = true },
-                    modifier = Modifier.testTag("show_chrome"),
+            if (!startWithChromeHidden) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .statusBarsPadding()
+                        .padding(12.dp),
+                    shape = CircleShape,
+                    color = BmSurface.copy(alpha = 0.52f),
                 ) {
-                    Icon(
-                        Icons.Default.Visibility,
-                        contentDescription = context.getString(R.string.show_overlay),
-                        tint = BmText,
-                    )
+                    IconButton(
+                        onClick = { chromeVisible = true },
+                        modifier = Modifier.testTag("show_chrome"),
+                    ) {
+                        Icon(
+                            Icons.Default.Visibility,
+                            contentDescription = context.getString(R.string.show_overlay),
+                            tint = BmText.copy(alpha = 0.78f),
+                        )
+                    }
                 }
             }
         }
@@ -690,34 +700,42 @@ private fun TopChrome(
 private fun PondWaitingOverlay(
     modifier: Modifier = Modifier,
 ) {
-    Surface(
+    Column(
         modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        color = Color(0x8F161B19),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(9.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Default.WaterDrop,
-                contentDescription = null,
-                tint = Color(0xFFB8C2B8),
-                modifier = Modifier.size(16.dp),
+        Canvas(modifier = Modifier.size(62.dp)) {
+            val center = Offset(size.width * 0.5f, size.height * 0.5f)
+            drawCircle(
+                color = Color(0x99D3D7CE),
+                radius = size.minDimension * 0.10f,
+                center = center,
             )
-            Column {
-                Text(
-                    stringResource(R.string.pond_waiting_title),
-                    color = BmText,
-                    fontSize = 12.sp,
-                )
-                Text(
-                    stringResource(R.string.pond_waiting_subtitle),
-                    color = BmTextMuted,
-                    fontSize = 9.sp,
-                )
-            }
+            drawCircle(
+                color = Color(0x66D3D7CE),
+                radius = size.minDimension * 0.25f,
+                center = center,
+                style = Stroke(width = 1.5.dp.toPx()),
+            )
+            drawCircle(
+                color = Color(0x33D3D7CE),
+                radius = size.minDimension * 0.43f,
+                center = center,
+                style = Stroke(width = 1.dp.toPx()),
+            )
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                stringResource(R.string.pond_waiting_title),
+                color = Color(0xFFE5E7E0),
+                fontSize = 13.sp,
+            )
+            Text(
+                stringResource(R.string.pond_waiting_subtitle),
+                color = Color(0xB8E5E7E0),
+                fontSize = 10.sp,
+            )
         }
     }
 }
@@ -732,46 +750,34 @@ private fun PondRevealOverlay(
     val remaining = (durationSeconds * (1f - safe)).coerceAtLeast(0f)
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(22.dp),
-        color = Color(0xA8171C19),
-        shadowElevation = 3.dp,
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0x85151B18),
+        shadowElevation = 2.dp,
     ) {
-        Column(
+        Row(
             modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(7.dp),
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.padding(end = 12.dp)) {
-                    Text(
-                        stringResource(R.string.pond_keep_looking),
-                        color = BmText,
-                        fontSize = 13.sp,
-                    )
-                    Text(
-                        stringResource(R.string.pond_reveal_remaining, remaining),
-                        color = BmTextMuted,
-                        fontSize = 10.sp,
-                    )
-                }
+            CircularProgressIndicator(
+                progress = safe,
+                modifier = Modifier.size(30.dp),
+                color = Color(0xFFD9DDD4),
+                trackColor = Color(0x35D9DDD4),
+                strokeWidth = 2.dp,
+            )
+            Column {
                 Text(
-                    "${(safe * 100).toInt()}%",
-                    color = BmAccent,
-                    fontSize = 13.sp,
+                    stringResource(R.string.pond_keep_looking),
+                    color = Color(0xFFE8EAE5),
+                    fontSize = 12.sp,
+                )
+                Text(
+                    stringResource(R.string.pond_reveal_remaining, remaining),
+                    color = Color(0xA8E8EAE5),
+                    fontSize = 9.sp,
                 )
             }
-            LinearProgressIndicator(
-                progress = safe,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(CircleShape),
-                color = BmAccent,
-                trackColor = BmTextMuted.copy(alpha = 0.18f),
-            )
         }
     }
 }
@@ -784,69 +790,155 @@ private fun LakeAdjustPanel(
     onTurnOff: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    fun mood(intensity: Float, motion: Float, darkness: Float, clarity: Float) {
+        onChange(
+            settings.copy(
+                reflectionScene = ReflectionScene.DARK_LAKE,
+                lakeIntensity = intensity,
+                lakeMotion = motion,
+                lakeDarkness = darkness,
+                lakeFaceClarity = clarity,
+            ).clamped(),
+        )
+    }
+
     Surface(
         modifier = modifier
             .clickable(onClick = {})
             .testTag("lake_adjust_panel"),
-        shape = RoundedCornerShape(24.dp),
-        color = BmSurface,
-        shadowElevation = 10.dp,
+        shape = RoundedCornerShape(28.dp),
+        color = Color(0xEE151A18),
+        shadowElevation = 12.dp,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(width = 36.dp, height = 4.dp)
+                    .clip(CircleShape)
+                    .background(Color(0x45E1E5DC)),
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.dark_lake), color = BmText, fontSize = 16.sp)
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(
-                        onClick = onTurnOff,
-                        modifier = Modifier.defaultMinSize(minHeight = 40.dp),
-                    ) {
-                        Text(stringResource(R.string.off), color = BmTextMuted)
-                    }
-                    TextButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.defaultMinSize(minHeight = 40.dp),
-                    ) {
-                        Text(stringResource(R.string.return_to_pond), color = BmAccent)
-                    }
+                Column {
+                    Text(stringResource(R.string.dark_lake), color = BmText, fontSize = 17.sp)
+                    Text(
+                        stringResource(R.string.pond_new_face_restart),
+                        color = BmTextMuted,
+                        fontSize = 10.sp,
+                    )
+                }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.defaultMinSize(minHeight = 42.dp),
+                ) {
+                    Text(stringResource(R.string.return_to_pond), color = BmAccent)
                 }
             }
-            LakeSliderRow(
-                title = stringResource(R.string.lake_intensity),
-                value = settings.lakeIntensity,
-                testTag = "popup_lake_intensity",
-            ) { onChange(settings.copy(lakeIntensity = it).clamped()) }
-            LakeSliderRow(
-                title = stringResource(R.string.lake_motion),
-                value = settings.lakeMotion,
-                testTag = "popup_lake_motion",
-            ) { onChange(settings.copy(lakeMotion = it).clamped()) }
-            LakeSliderRow(
-                title = stringResource(R.string.lake_darkness),
-                value = settings.lakeDarkness,
-                testTag = "popup_lake_darkness",
-            ) { onChange(settings.copy(lakeDarkness = it).clamped()) }
+
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0x552D3932),
+            ) {
+                Text(
+                    stringResource(R.string.lake_scene_hint),
+                    color = Color(0xFFD8DDD5),
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                )
+            }
+
+            Text(stringResource(R.string.scene_moods), color = BmText, fontSize = 12.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
+                PondMoodButton(
+                    title = stringResource(R.string.scene_mood_still_well),
+                    active = settings.lakeMotion in 0.24f..0.36f && settings.lakeDarkness in 0.42f..0.58f,
+                    modifier = Modifier.weight(1f),
+                ) { mood(0.90f, 0.30f, 0.50f, 0.96f) }
+                PondMoodButton(
+                    title = stringResource(R.string.scene_mood_marsh),
+                    active = settings.lakeDarkness >= 0.60f,
+                    modifier = Modifier.weight(1f),
+                ) { mood(0.92f, 0.22f, 0.68f, 0.95f) }
+                PondMoodButton(
+                    title = stringResource(R.string.scene_mood_ripple),
+                    active = settings.lakeFaceClarity >= 0.985f && settings.lakeDarkness <= 0.42f,
+                    modifier = Modifier.weight(1f),
+                ) { mood(0.76f, 0.20f, 0.36f, 1.0f) }
+            }
+
+            LakeDurationSlider(
+                seconds = settings.revealDurationSeconds,
+                onValue = { onChange(settings.copy(revealDurationSeconds = it).clamped()) },
+            )
             LakeSliderRow(
                 title = stringResource(R.string.lake_face_clarity),
                 value = settings.lakeFaceClarity,
                 testTag = "popup_lake_clarity",
             ) { onChange(settings.copy(lakeFaceClarity = it).clamped()) }
-            LakeDurationSlider(
-                seconds = settings.revealDurationSeconds,
-                onValue = { onChange(settings.copy(revealDurationSeconds = it).clamped()) },
-            )
+            LakeSliderRow(
+                title = stringResource(R.string.lake_motion),
+                value = settings.lakeMotion,
+                testTag = "popup_lake_motion",
+            ) { onChange(settings.copy(lakeMotion = it).clamped()) }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                TextButton(
+                    onClick = onTurnOff,
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 42.dp),
+                ) {
+                    Text(stringResource(R.string.off), color = BmTextMuted)
+                }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .weight(2f)
+                        .defaultMinSize(minHeight = 42.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0x33DCE4DA)),
+                ) {
+                    Text(stringResource(R.string.return_to_pond), color = BmText)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PondMoodButton(
+    title: String,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = modifier
+            .defaultMinSize(minHeight = 48.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
+        color = if (active) Color(0xFFD8DED5) else Color(0x3A758078),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
             Text(
-                stringResource(R.string.lake_scene_hint),
-                color = BmTextMuted,
+                title,
+                color = if (active) Color(0xFF172019) else Color(0xFFD9DED8),
                 fontSize = 10.sp,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
             )
         }
     }

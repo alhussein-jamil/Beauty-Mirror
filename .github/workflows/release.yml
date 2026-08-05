@@ -96,7 +96,8 @@ jobs:
             ASSETS+=(releases/beauty-mirror-release-unsigned.apk)
           fi
           NOTES_ARGS=(--generate-notes)
-          [[ -f RELEASE_NOTES_3.1.0.md ]] && NOTES_ARGS=(--notes-file RELEASE_NOTES_3.1.0.md)
+          NOTES_FILE="RELEASE_NOTES_${{ steps.ver.outputs.name }}.md"
+          [[ -f "$NOTES_FILE" ]] && NOTES_ARGS=(--notes-file "$NOTES_FILE")
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${ASSETS[@]}" --clobber
           else

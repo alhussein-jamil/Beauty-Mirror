@@ -2,6 +2,8 @@
 precision highp float;
 in vec2 vTexCoord;
 uniform sampler2D uInput;
+uniform sampler2D uFaceMask;
+uniform float uHasFaceMask;
 uniform float uTime;
 uniform vec2 uViewport;
 uniform vec2 uFaceCenter;
@@ -24,20 +26,43 @@ float hash12(vec2 p) {
     return fract((p3.x + p3.y) * p3.z);
 }
 
-float softEllipse(vec2 uv, vec2 center, vec2 radius) {
-    vec2 d = (uv - center) / max(radius, vec2(0.001));
-    return exp(-dot(d, d) * 1.65);
+float valueNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash12(i);
+    float b = hash12(i + vec2(1.0, 0.0));
+    float c = hash12(i + vec2(0.0, 1.0));
+    float d = hash12(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 
-float ringProfile(float radius, float centerRadius, float width) {
+float pondNoise(vec2 p, float time, float quality) {
+    float n = valueNoise(p);
+    n += valueNoise(p * 2.03 + vec2(7.3, -3.1) + time * 0.007) * 0.48;
+    if (quality > 0.44) {
+        n += valueNoise(p * 4.11 + vec2(-5.6, 9.8) - time * 0.004) * 0.22;
+    }
+    return n / (quality > 0.44 ? 1.70 : 1.48);
+}
+
+float ring(float radius, float centerRadius, float width) {
     float d = (radius - centerRadius) / max(width, 0.001);
     return exp(-d * d);
 }
 
+float softEllipse(vec2 uv, vec2 center, vec2 radius) {
+    vec2 d = (uv - center) / max(radius, vec2(0.001));
+    return exp(-dot(d, d) * 1.72);
+}
+
+float softBand(float value, float center, float halfWidth) {
+    return 1.0 - smoothstep(halfWidth, halfWidth * 2.5, abs(value - center));
+}
+
 void main() {
-    vec4 base = texture(uInput, vTexCoord);
     if (uEnabled < 0.5) {
-        fragColor = base;
+        fragColor = texture(uInput, vTexCoord);
         return;
     }
 
@@ -45,150 +70,137 @@ void main() {
     float aspect = uViewport.x / max(uViewport.y, 1.0);
     vec2 p = uv - vec2(0.5);
     p.x *= aspect;
+
     float time = uTime;
     float motion = clamp(uMotion, 0.0, 1.0);
     float intensity = clamp(uIntensity, 0.0, 1.0);
+    float darkness = clamp(uDarkness, 0.0, 1.0);
     float reveal = clamp(uVisitorReveal, 0.0, 1.0);
     float presence = clamp(uFacePresence, 0.0, 1.0);
-    float clarity = clamp(uFaceClarity, 0.0, 1.0);
+    float quality = clamp(uQuality, 0.0, 1.0);
 
-    // Broad, low-frequency surface flow. The reference pond is mostly still: motion changes
-    // phase speed and amplitude, not the number of obvious synthetic rings.
-    float phaseA = p.y * 13.0 + sin(p.x * 4.2 + time * 0.055) * 1.25 + time * (0.05 + motion * 0.12);
-    float phaseB = dot(p, vec2(8.6, -5.4)) - time * (0.035 + motion * 0.10) + 1.7;
-    float phaseC = dot(p, vec2(-4.4, 9.2)) + sin(p.y * 3.0 - time * 0.04) * 0.8;
-    float surfaceHeight = sin(phaseA) * 0.50 + sin(phaseB) * 0.31 + sin(phaseC) * 0.19;
+    // Slow low-frequency movement: murky pond, never a turquoise swimming-pool caustic pattern.
+    vec2 drift = vec2(time * (0.010 + motion * 0.015), -time * (0.006 + motion * 0.010));
+    float murkA = pondNoise(p * 1.45 + drift, time, quality);
+    float murkB = pondNoise(p * 2.35 - drift * 0.55 + vec2(3.8, -1.2), time, quality);
+    float broadMurk = clamp(murkA * 0.68 + murkB * 0.32, 0.0, 1.0);
 
-    vec2 surfaceSlope;
-    surfaceSlope.x =
-        cos(phaseA) * cos(p.x * 4.2 + time * 0.055) * 5.25 * 0.50 +
-        cos(phaseB) * 8.6 * 0.31 +
-        cos(phaseC) * -4.4 * 0.19;
-    surfaceSlope.y =
-        cos(phaseA) * 13.0 * 0.50 +
-        cos(phaseB) * -5.4 * 0.31 +
-        cos(phaseC) * (9.2 + cos(p.y * 3.0 - time * 0.04) * 2.4) * 0.19;
+    vec3 deepPeat = vec3(0.075, 0.087, 0.066);
+    vec3 siltGrey = vec3(0.285, 0.302, 0.285);
+    vec3 paleSky = vec3(0.455, 0.470, 0.445);
+    vec3 pond = mix(deepPeat, siltGrey, 0.30 + broadMurk * 0.58);
 
-    // A single slow arrival ripple is tied to the transformation progress. Two weak ambient
-    // ripple sources keep the pond alive without reading as a digital ripple filter.
-    vec2 faceVector = uv - uFaceCenter;
-    faceVector.x *= aspect;
-    float faceRadiusFromCenter = length(faceVector);
-    vec2 faceRadial = faceVector / max(faceRadiusFromCenter, 0.0001);
-    float arrivalRadius = 0.025 + reveal * 0.82;
-    float arrivalWidth = mix(0.018, 0.034, motion);
-    float arrivalOuter = ringProfile(faceRadiusFromCenter, arrivalRadius, arrivalWidth);
-    float arrivalMiddle = ringProfile(
-        faceRadiusFromCenter,
-        max(0.0, arrivalRadius - 0.050),
-        arrivalWidth * 0.82
-    );
-    float arrivalInner = ringProfile(
-        faceRadiusFromCenter,
-        max(0.0, arrivalRadius - 0.095),
-        arrivalWidth * 0.72
-    );
-    // Alternating crests/troughs create a restrained concentric wave train like a real drop in a
-    // still pond instead of a single digital displacement ring.
-    float arrival = arrivalOuter - arrivalMiddle * 0.52 + arrivalInner * 0.24;
-    float arrivalEnvelope = smoothstep(0.015, 0.08, reveal) * (1.0 - smoothstep(0.78, 1.0, reveal));
-    surfaceHeight += arrival * arrivalEnvelope * (0.38 + motion * 0.34) * presence;
-    surfaceSlope += faceRadial * arrival * arrivalEnvelope * (2.8 + motion * 5.4) * presence;
+    // Broad pale workshop-light / sky reflections. Their edges drift slowly and remain blurred.
+    float warpedY = uv.y + sin(uv.x * 4.3 + time * 0.020) * 0.012 + (murkB - 0.5) * 0.020;
+    float skyBandA = softBand(warpedY, 0.205 + sin(time * 0.011) * 0.018, 0.020);
+    float skyBandB = softBand(warpedY, 0.745 + sin(time * 0.009 + 2.1) * 0.020, 0.026);
+    float skyWash = smoothstep(0.62, 0.98, uv.x + murkA * 0.18) * 0.16;
+    pond = mix(pond, paleSky, skyBandA * 0.15 + skyBandB * 0.11 + skyWash);
 
-    vec2 ambientCenterA = vec2(0.24, 0.34);
-    vec2 ambientDeltaA = uv - ambientCenterA;
-    ambientDeltaA.x *= aspect;
-    float ambientRadiusA = length(ambientDeltaA);
-    vec2 ambientRadialA = ambientDeltaA / max(ambientRadiusA, 0.0001);
-    float ambientCycleA = fract(time * (0.020 + motion * 0.018) + 0.21);
-    float ambientRingA = ringProfile(ambientRadiusA, 0.07 + ambientCycleA * 0.48, 0.028 + motion * 0.016);
-    surfaceSlope += ambientRadialA * ambientRingA * (1.1 + motion * 2.0);
+    // Dark bank/wood/reflection silhouettes around the perimeter, inspired by the supplied pond.
+    float leftBankNoise = valueNoise(vec2(uv.y * 5.2 + time * 0.006, 4.7));
+    float topBankNoise = valueNoise(vec2(uv.x * 5.8 - time * 0.004, 8.2));
+    float leftBank = 1.0 - smoothstep(0.035, 0.16, uv.x + (leftBankNoise - 0.5) * 0.11);
+    float topBank = 1.0 - smoothstep(0.025, 0.14, uv.y + (topBankNoise - 0.5) * 0.085);
+    pond *= 1.0 - (leftBank * 0.55 + topBank * 0.34) * (0.72 + darkness * 0.22);
 
-    vec2 ambientCenterB = vec2(0.78, 0.68);
-    vec2 ambientDeltaB = uv - ambientCenterB;
-    ambientDeltaB.x *= aspect;
-    float ambientRadiusB = length(ambientDeltaB);
-    vec2 ambientRadialB = ambientDeltaB / max(ambientRadiusB, 0.0001);
-    float ambientCycleB = fract(time * (0.014 + motion * 0.013) + 0.63);
-    float ambientRingB = ringProfile(ambientRadiusB, 0.05 + ambientCycleB * 0.40, 0.026 + motion * 0.014);
-    float secondAmbientBudget = smoothstep(0.34, 0.58, uQuality);
-    surfaceSlope += ambientRadialB * ambientRingB * (0.55 + motion * 1.05) * secondAmbientBudget;
-
-    vec2 faceRadius = max(uFaceSize * vec2(0.64, 0.66), vec2(0.11, 0.15));
-    float faceCore = softEllipse(uv, uFaceCenter, faceRadius) * presence;
-    float settledFace = faceCore * clarity * smoothstep(0.08, 0.72, reveal);
-
-    // Water remains visible across the face; the reflection only becomes calmer and clearer over
-    // time. There is deliberately no hard portal/still ellipse.
-    float distortionSuppression = settledFace * 0.78;
-    float bend = mix(0.00036, 0.00145, motion) * mix(0.70, 1.0, intensity);
-    vec2 distortion = surfaceSlope * bend * (1.0 - distortionSuppression);
-    distortion = clamp(distortion, vec2(-0.012), vec2(0.012));
-    distortion.x /= aspect;
-    vec2 sampleUv = clamp(uv + distortion, vec2(0.002), vec2(0.998));
-
-    vec3 reflected = texture(uInput, sampleUv).rgb;
-    if (uQuality > 0.52) {
-        vec2 smear = normalize(surfaceSlope + vec2(0.001)) * (0.0008 + motion * 0.0013);
-        smear.x /= aspect;
-        vec3 sampleA = texture(uInput, clamp(sampleUv + smear, vec2(0.002), vec2(0.998))).rgb;
-        vec3 sampleB = texture(uInput, clamp(sampleUv - smear, vec2(0.002), vec2(0.998))).rgb;
-        reflected = (reflected * 2.0 + sampleA + sampleB) * 0.25;
+    // Three independent expanding ripples keep the no-face state alive as an animated screensaver.
+    float rippleValue = 0.0;
+    vec2 rippleSlope = vec2(0.0);
+    vec2 centers[3];
+    centers[0] = vec2(0.24, 0.35);
+    centers[1] = vec2(0.77, 0.67);
+    centers[2] = vec2(0.56, 0.18);
+    for (int i = 0; i < 3; ++i) {
+        if (i == 2 && quality < 0.46) break;
+        vec2 delta = uv - centers[i];
+        delta.x *= aspect;
+        float radius = length(delta);
+        float cycle = fract(time * (0.020 + float(i) * 0.004 + motion * 0.012) + float(i) * 0.31);
+        float centerRadius = 0.035 + cycle * (0.43 + float(i) * 0.045);
+        float width = 0.014 + cycle * 0.014 + motion * 0.006;
+        float crest = ring(radius, centerRadius, width);
+        float trough = ring(radius, max(0.0, centerRadius - 0.036), width * 0.82);
+        float wave = (crest - trough * 0.52) * (1.0 - cycle) * (0.55 + motion * 0.45);
+        rippleValue += wave;
+        rippleSlope += delta / max(radius, 0.001) * wave;
     }
 
-    // Murky grey-green pond body inspired by the workshop reference photographs: low saturation,
-    // uneven peat patches, soft sky glare and suspended mineral particles.
-    float reflectedLuma = dot(reflected, LUMA);
-    float broadMurk = 0.5 + 0.5 * sin(p.x * 3.1 + sin(p.y * 2.4 + 0.7) * 1.4);
-    broadMurk *= 0.55 + 0.45 * (0.5 + 0.5 * sin(p.y * 4.6 - p.x * 1.8 + 2.2));
-    vec3 desaturatedReflection = mix(vec3(reflectedLuma), reflected, 0.34 + settledFace * 0.24);
-    vec3 slate = vec3(0.255, 0.275, 0.265);
-    vec3 peat = vec3(0.105, 0.120, 0.090);
-    vec3 pondBody = mix(peat, slate, 0.30 + broadMurk * 0.48);
-    float absorption = 0.22 + clamp(uDarkness, 0.0, 1.0) * 0.38;
-    absorption *= 1.0 - settledFace * 0.44;
-    vec3 waterColor = mix(desaturatedReflection, pondBody + vec3(reflectedLuma) * 0.16, absorption);
+    // One visitor-arrival wave spreads from the detected face during the reveal.
+    vec2 faceDelta = uv - uFaceCenter;
+    faceDelta.x *= aspect;
+    float faceDistance = length(faceDelta);
+    float arrivalRadius = 0.025 + reveal * 0.72;
+    float arrivalEnvelope = smoothstep(0.01, 0.09, reveal) * (1.0 - smoothstep(0.74, 1.0, reveal));
+    float arrival = ring(faceDistance, arrivalRadius, 0.020 + motion * 0.012) -
+        ring(faceDistance, max(0.0, arrivalRadius - 0.045), 0.017 + motion * 0.009) * 0.48;
+    arrival *= arrivalEnvelope * presence;
+    rippleValue += arrival * 0.72;
+    rippleSlope += faceDelta / max(faceDistance, 0.001) * arrival * 1.8;
 
-    // Wide horizontal highlights imitate reflected workshop lights / pale sky rather than sharp
-    // CGI specular lines.
-    float skyBand = pow(max(0.0, sin(uv.y * 15.0 + sin(uv.x * 4.0) * 0.8 + 0.7)), 18.0);
-    float slopeGlint = pow(clamp(length(surfaceSlope) * 0.045, 0.0, 1.0), 3.2);
-    float crest = 0.5 + 0.5 * surfaceHeight;
-    float arrivalCrest = max(arrival, 0.0);
-    float glint = (skyBand * 0.045 + slopeGlint * 0.030 + arrivalCrest * arrivalEnvelope * 0.030) *
-        (0.42 + intensity * 0.58) * (1.0 - settledFace * 0.58);
-    waterColor += vec3(0.73, 0.75, 0.69) * glint;
-    waterColor *= 1.0 - (1.0 - crest) * 0.025 * motion;
+    float rippleLight = max(rippleValue, 0.0);
+    float rippleDark = max(-rippleValue, 0.0);
+    pond += paleSky * rippleLight * (0.055 + intensity * 0.035);
+    pond *= 1.0 - rippleDark * 0.035;
 
-    // Sparse suspended particles. The grid is static in pond space, avoiding sparkling video noise.
-    if (uQuality > 0.28) {
-        vec2 particleGrid = uv * vec2(82.0, 138.0);
-        vec2 particleCell = floor(particleGrid);
-        vec2 particleLocal = fract(particleGrid) - 0.5;
-        float particleSeed = hash12(particleCell);
-        vec2 particleOffset = vec2(
-            hash12(particleCell + vec2(3.7, 8.1)),
-            hash12(particleCell + vec2(9.2, 2.4))
-        ) - 0.5;
-        float particleDot = 1.0 - smoothstep(0.025, 0.12, length(particleLocal - particleOffset * 0.62));
-        float particle = step(0.935, particleSeed) * particleDot;
-        float darkSeed = hash12(particleCell + vec2(15.4, 7.8));
-        float darkParticle = step(0.972, darkSeed) * particleDot;
-        waterColor += vec3(0.68, 0.69, 0.62) * particle * (0.025 + intensity * 0.035);
-        waterColor *= 1.0 - darkParticle * 0.055;
+    // Stable suspended mineral/silt particles. They drift imperceptibly instead of sparkling.
+    if (quality > 0.22) {
+        vec2 particleUv = uv + vec2(time * 0.0007, -time * 0.00035);
+        vec2 grid = particleUv * vec2(74.0, 126.0);
+        vec2 cell = floor(grid);
+        vec2 local = fract(grid) - 0.5;
+        float seed = hash12(cell);
+        vec2 offset = vec2(hash12(cell + vec2(3.1)), hash12(cell + vec2(8.7))) - 0.5;
+        float dotShape = 1.0 - smoothstep(0.025, 0.115, length(local - offset * 0.60));
+        float paleParticle = step(0.943, seed) * dotShape;
+        float darkParticle = step(0.978, hash12(cell + vec2(14.2))) * dotShape;
+        pond += vec3(0.64, 0.65, 0.59) * paleParticle * 0.035;
+        pond *= 1.0 - darkParticle * 0.07;
     }
 
-    // As looking time increases the beautified input becomes more legible, while retaining the
-    // water grade and a small amount of refraction so the result still reads as a pond reflection.
-    vec3 readableFace = mix(waterColor, desaturatedReflection, settledFace * 0.42);
-    readableFace = mix(readableFace, reflected, settledFace * 0.24);
-    waterColor = mix(waterColor, readableFace, faceCore * (0.35 + reveal * 0.55));
+    // The idle state is now purely the animated pond. The camera is sampled only near a face.
+    vec3 finalColor = pond;
+    vec2 faceRadius = max(uFaceSize * vec2(0.60, 0.62), vec2(0.10, 0.14));
+    float ellipseGate = softEllipse(uv, uFaceCenter, faceRadius) * presence;
+    if (ellipseGate > 0.002 && presence > 0.01) {
+        float maskSample = uHasFaceMask > 0.5 ? texture(uFaceMask, uv).r : ellipseGate;
+        // Actual landmark mask is authoritative. A tiny ellipse halo only softens the cutout edge.
+        float faceShape = clamp(max(maskSample, ellipseGate * 0.075), 0.0, 1.0) * presence;
 
-    float vignette = smoothstep(0.20, 0.92, dot(p, p) * 1.25);
-    waterColor *= 1.0 - vignette * (0.06 + uDarkness * 0.12);
+        // Minimal surface movement on the face: enough to read as reflection, never enough to hide it.
+        float earlyWater = mix(1.0, 0.20, smoothstep(0.0, 0.82, reveal));
+        vec2 faceDistortion = rippleSlope * (0.00030 + motion * 0.00048) * earlyWater;
+        faceDistortion.x /= max(aspect, 0.001);
+        faceDistortion = clamp(faceDistortion, vec2(-0.0022), vec2(0.0022));
+        vec2 faceUv = clamp(uv + faceDistortion, vec2(0.002), vec2(0.998));
+        vec3 reflection = texture(uInput, faceUv).rgb;
 
-    // Lake intensity controls the scene blend, not only distortion, so the setting remains easy to
-    // understand in the workshop UI.
-    vec3 finalColor = mix(base.rgb, waterColor, 0.38 + intensity * 0.62);
-    fragColor = vec4(clamp(finalColor, 0.0, 1.0), base.a);
+        if (quality > 0.62 && reveal < 0.72) {
+            vec2 softStep = normalize(rippleSlope + vec2(0.001)) * 0.00055 * earlyWater;
+            softStep.x /= max(aspect, 0.001);
+            vec3 nearby = texture(uInput, clamp(faceUv + softStep, vec2(0.002), vec2(0.998))).rgb;
+            reflection = mix(reflection, nearby, 0.12 * (1.0 - reveal));
+        }
+
+        float reflectionLuma = dot(reflection, LUMA);
+        float colorReturn = 0.72 + reveal * 0.28;
+        reflection = mix(vec3(reflectionLuma), reflection, colorReturn);
+
+        // Water tint over the face falls from 11% to 2.5%; this explicitly addresses the client note.
+        float veil = mix(0.11, 0.025, smoothstep(0.0, 0.78, reveal));
+        reflection = mix(reflection, pond, veil * (0.65 + motion * 0.35));
+        reflection += paleSky * max(arrival, 0.0) * 0.018 * (1.0 - reveal);
+
+        // The mirror is legible immediately; looking longer reveals full clarity and accumulated beauty.
+        float faceAlpha = faceShape * clamp(uFaceClarity, 0.0, 1.0) *
+            (0.76 + smoothstep(0.0, 0.70, reveal) * 0.24);
+        finalColor = mix(pond, reflection, clamp(faceAlpha, 0.0, 1.0));
+    }
+
+    float vignette = smoothstep(0.22, 0.94, dot(p, p) * 1.30);
+    finalColor *= 1.0 - vignette * (0.045 + darkness * 0.085);
+    finalColor = mix(vec3(dot(finalColor, LUMA)), finalColor, 0.70 + intensity * 0.24);
+    finalColor *= mix(1.02, 0.84, darkness * 0.60);
+
+    fragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
 }
