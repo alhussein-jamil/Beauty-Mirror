@@ -41,8 +41,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.Compare
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -74,7 +74,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -306,7 +305,7 @@ fun MirrorScreen(
 
 
 
-        // Tap empty preview hides studio and chrome so only the artwork remains.
+        // Empty-preview tap toggles chrome (and closes studio if open).
         if (chromeVisible) {
             Box(
                 modifier = Modifier
@@ -314,9 +313,10 @@ fun MirrorScreen(
                     .clickable(
                         onClickLabel = context.getString(R.string.hide_overlay),
                         onClick = {
-                            if (controlsVisible) commitPondExperience() else {
-                                chromeVisible = false
-                            }
+                            holdingBeforeAfter = false
+                            controlsVisible = false
+                            activeFocus = BeautyFocus.OVERVIEW
+                            chromeVisible = false
                         },
                     ),
             )
@@ -331,13 +331,8 @@ fun MirrorScreen(
             TopChrome(
                 tracking = tracking,
                 timing = timing,
-                runtimeQuality = runtimeQuality,
                 performanceState = performanceState,
-                reflectionScene = settings.reflectionScene,
                 onSwitchCamera = { scope.launch { cameraController.switchCamera(lifecycleOwner) } },
-                onHide = {
-                    if (controlsVisible) commitPondExperience() else chromeVisible = false
-                },
             )
         }
 
@@ -423,15 +418,14 @@ fun MirrorScreen(
         }
 
         if (!chromeVisible) {
-            // Artwork stays clean. Long-press anywhere to restore chrome (workshop + normal).
+            // Artwork only — tap anywhere restores chrome.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onLongPress = { chromeVisible = true },
-                        )
-                    },
+                    .clickable(
+                        onClickLabel = context.getString(R.string.show_overlay),
+                        onClick = { chromeVisible = true },
+                    ),
             )
         }
 
@@ -499,11 +493,8 @@ fun MirrorScreen(
 private fun TopChrome(
     tracking: FaceTrackingResult,
     timing: FrameTimingCollector.Snapshot?,
-    runtimeQuality: QualityLevel,
     performanceState: AdaptivePerformanceState,
-    reflectionScene: ReflectionScene,
     onSwitchCamera: () -> Unit,
-    onHide: () -> Unit,
 ) {
     val context = LocalContext.current
     val fps = timing?.cameraFps ?: 0.0
@@ -518,89 +509,51 @@ private fun TopChrome(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = BmSurface,
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 13.dp, vertical = 8.dp)) {
-                Text(
-                    text = context.getString(R.string.app_name),
-                    color = BmText,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = buildString {
-                        append(
-                            if (tracking.isValid) {
-                                context.getString(R.string.face_locked)
-                            } else {
-                                context.getString(R.string.finding_face)
-                            },
-                        )
-                        if (reflectionScene == ReflectionScene.DARK_LAKE) {
-                            append(" · ")
-                            append(context.getString(R.string.dark_lake).uppercase())
-                        }
-                    },
-                    color = if (tracking.isValid) BmAccent else BmTextMuted,
-                    style = MaterialTheme.typography.labelSmall,
+        Surface(shape = CircleShape, color = BmSurface) {
+            IconButton(
+                onClick = onSwitchCamera,
+                modifier = Modifier.testTag("switch_camera"),
+            ) {
+                Icon(
+                    Icons.Default.Cameraswitch,
+                    contentDescription = context.getString(R.string.switch_camera),
+                    tint = BmText,
                 )
             }
         }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Surface(
+            shape = CircleShape,
+            color = BmSurface,
+            modifier = Modifier.testTag("face_indicator"),
         ) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = BmSurface,
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
-                    horizontalAlignment = Alignment.End,
-                ) {
-                    Text(
-                        text = if (fps > 0.0) "%.0f FPS".format(fps) else context.getString(R.string.fps_measuring),
-                        color = when {
-                            cameraLimited -> BmTextMuted
-                            !fpsHealthy -> BmDanger
-                            protecting -> BmAccent
-                            else -> BmText
-                        },
-                        fontSize = 12.sp,
-                    )
-                    Text(
-                        text = stringResource(runtimeQuality.labelRes()),
-                        color = BmTextMuted,
-                        fontSize = 9.sp,
-                    )
-                }
-            }
-            Surface(shape = CircleShape, color = BmSurface) {
-                IconButton(
-                    onClick = onSwitchCamera,
-                    modifier = Modifier.testTag("switch_camera"),
-                ) {
-                    Icon(
-                        Icons.Default.Cameraswitch,
-                        contentDescription = context.getString(R.string.switch_camera),
-                        tint = BmText,
-                    )
-                }
-            }
-            Surface(shape = CircleShape, color = BmSurface) {
-                IconButton(
-                    onClick = onHide,
-                    modifier = Modifier.testTag("hide_chrome"),
-                ) {
-                    Icon(
-                        Icons.Default.VisibilityOff,
-                        contentDescription = context.getString(R.string.hide_overlay),
-                        tint = BmText,
-                    )
-                }
-            }
+            Icon(
+                Icons.Default.Face,
+                contentDescription = context.getString(
+                    if (tracking.isValid) R.string.face_locked else R.string.finding_face,
+                ),
+                tint = if (tracking.isValid) BmAccent else BmTextMuted,
+                modifier = Modifier
+                    .padding(10.dp)
+                    .size(22.dp),
+            )
+        }
+
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = BmSurface,
+        ) {
+            Text(
+                text = if (fps > 0.0) "%.0f FPS".format(fps) else context.getString(R.string.fps_measuring),
+                color = when {
+                    cameraLimited -> BmTextMuted
+                    !fpsHealthy -> BmDanger
+                    protecting -> BmAccent
+                    else -> BmText
+                },
+                fontSize = 12.sp,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            )
         }
     }
 }
